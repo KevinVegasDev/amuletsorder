@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# project documentation
+PROJECT_ROADMAP.md
+WORDPRESS_SETUP.md
+SEO_IMPLEMENTATION_LOG.md
