@@ -4,12 +4,13 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'amuletsorder.com',
-        port: '',
-        pathname: '/wp-content/uploads/**',
+        protocol: "https",
+        hostname: "amuletsorder.com",
+        port: "",
+        pathname: "/wp-content/uploads/**",
       },
     ],
+    qualities: [25, 50, 70, 75, 80, 85, 90, 95],
   },
 };
 

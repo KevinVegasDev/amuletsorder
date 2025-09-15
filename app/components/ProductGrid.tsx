@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-import { Product } from '../types/product';
-import ProductCard from './ProductCard';
+import React from "react";
+import { Product } from "../types/product";
+import ProductCard from "./ProductCard";
 
 interface ProductGridProps {
   products: Product[];
@@ -21,25 +21,25 @@ interface ProductGridProps {
 const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   loading = false,
-  className = '',
+  className = "",
   columns = {
     mobile: 2,
     tablet: 3,
     desktop: 4,
-    large: 4
+    large: 4,
   },
   onAddToCart,
-  onAddToWishlist
+  onAddToWishlist,
 }) => {
   // Generar clases de grid responsivo basado en las columnas
   const getGridClasses = () => {
-    return `grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 justify-items-center`;
+    return `grid grid-cols-[repeat(auto-fit,minmax(329px,1fr))] gap-6 `;
   };
 
   // Componente de skeleton para loading
   const ProductSkeleton = () => (
     <div className="bg-white border border-gray-100 rounded-lg overflow-hidden animate-pulse">
-      <div className="aspect-square bg-gray-200"></div>
+      <div className="aspect-[3/4] bg-gray-200"></div>
       <div className="p-4 space-y-3">
         <div className="h-3 bg-gray-200 rounded w-1/3"></div>
         <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -61,11 +61,12 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           <path d="M9 8V17H11V8H9ZM13 8V17H15V8H13Z" />
         </svg>
       </div>
-      <h3 className="text-xl font-medium text-gray-900 mb-2">
+      <h3 className="text-xl font-medium text-gray-900">
         No se encontraron productos
       </h3>
       <p className="text-gray-500 max-w-md">
-        No hay productos disponibles en este momento. Intenta ajustar los filtros o vuelve más tarde.
+        No hay productos disponibles en este momento. Intenta ajustar los
+        filtros o vuelve más tarde.
       </p>
     </div>
   );
@@ -73,7 +74,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   if (loading) {
     return (
       <div className={`${getGridClasses()} ${className}`}>
-        {Array.from({ length: columns.desktop * 2 }).map((_, index) => (
+        {Array.from({ length: 6 }).map((_, index) => (
           <ProductSkeleton key={index} />
         ))}
       </div>
@@ -82,7 +83,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
 
   if (!products || products.length === 0) {
     return (
-      <div className={`grid grid-cols-1 ${className}`}>
+      <div className={`${getGridClasses()} ${className}`}>
         <EmptyState />
       </div>
     );
@@ -96,7 +97,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           product={product}
           onAddToCart={onAddToCart}
           onAddToWishlist={onAddToWishlist}
-          className="w-full max-w-[329px] max-h-[432px]"
         />
       ))}
     </div>

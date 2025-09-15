@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { ProductFilters as ProductFiltersType } from '../types/product';
+import React, { useState } from "react";
+import { ProductFilters as ProductFiltersType } from "../types/product";
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;
@@ -10,40 +10,38 @@ interface ProductFiltersProps {
   className?: string;
 }
 
-
-
 const ProductFilters: React.FC<ProductFiltersProps> = ({
   filters,
   onFiltersChange,
   onClearFilters,
-  className = ''
+  className = "",
 }) => {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     categories: true,
     price: true,
     features: true,
-    rating: false
+    rating: false,
   });
 
   const [priceRange, setPriceRange] = useState({
     min: filters.priceRange?.min || 0,
-    max: filters.priceRange?.max || 100
+    max: filters.priceRange?.max || 100,
   });
 
   // Categorías disponibles (esto debería venir de una API en producción)
   const categories = [
-    { id: 'tshirts', name: 'T-Shirts', count: 45 },
-    { id: 'hoodies', name: 'Hoodies', count: 23 },
-    { id: 'accessories', name: 'Accesorios', count: 18 },
-    { id: 'bags', name: 'Bolsas', count: 12 },
-    { id: 'mugs', name: 'Tazas', count: 8 },
-    { id: 'stickers', name: 'Stickers', count: 15 }
+    { id: "tshirts", name: "T-Shirts", count: 45 },
+    { id: "hoodies", name: "Hoodies", count: 23 },
+    { id: "accessories", name: "Accesorios", count: 18 },
+    { id: "bags", name: "Bolsas", count: 12 },
+    { id: "mugs", name: "Tazas", count: 8 },
+    { id: "stickers", name: "Stickers", count: 15 },
   ];
 
   const toggleSection = (sectionId: string) => {
-    setOpenSections(prev => ({
+    setOpenSections((prev) => ({
       ...prev,
-      [sectionId]: !prev[sectionId]
+      [sectionId]: !prev[sectionId],
     }));
   };
 
@@ -51,11 +49,11 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     const currentCategories = filters.categories || [];
     const newCategories = checked
       ? [...currentCategories, categoryId]
-      : currentCategories.filter(id => id !== categoryId);
-    
+      : currentCategories.filter((id) => id !== categoryId);
+
     onFiltersChange({
       ...filters,
-      categories: newCategories.length > 0 ? newCategories : undefined
+      categories: newCategories.length > 0 ? newCategories : undefined,
     });
   };
 
@@ -63,29 +61,36 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     setPriceRange({ min, max });
     onFiltersChange({
       ...filters,
-      priceRange: { min, max }
+      priceRange: { min, max },
     });
   };
 
-  const handleFeatureChange = (feature: 'featured' | 'onSale', checked: boolean) => {
+  const handleFeatureChange = (
+    feature: "featured" | "onSale",
+    checked: boolean
+  ) => {
     onFiltersChange({
       ...filters,
-      [feature]: checked || undefined
+      [feature]: checked || undefined,
     });
   };
 
   const handleRatingChange = (rating: number) => {
     onFiltersChange({
       ...filters,
-      minRating: rating
+      minRating: rating,
     });
   };
 
   const hasActiveFilters = Object.keys(filters).length > 0;
 
-  const FilterSection: React.FC<{ id: string; title: string; children: React.ReactNode }> = ({ id, title, children }) => {
+  const FilterSection: React.FC<{
+    id: string;
+    title: string;
+    children: React.ReactNode;
+  }> = ({ id, title, children }) => {
     const isOpen = openSections[id];
-    
+
     return (
       <div className="border-b border-gray-200 last:border-b-0">
         <button
@@ -95,29 +100,36 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
           <svg
             className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
-              isOpen ? 'rotate-180' : ''
+              isOpen ? "rotate-180" : ""
             }`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
-        
-        <div className={`overflow-hidden transition-all duration-300 ${
-          isOpen ? 'max-h-96 pb-4' : 'max-h-0'
-        }`}>
-          <div className="space-y-3">
-            {children}
-          </div>
+
+        <div
+          className={`overflow-hidden transition-all duration-300 ${
+            isOpen ? "max-h-96 pb-4" : "max-h-0"
+          }`}
+        >
+          <div className="space-y-3">{children}</div>
         </div>
       </div>
     );
   };
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}>
+    <div
+      className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}
+    >
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -139,13 +151,19 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         <FilterSection id="categories" title="Categorías">
           <div className="space-y-3">
             {categories.map((category) => {
-              const isChecked = filters.categories?.includes(category.id) || false;
+              const isChecked =
+                filters.categories?.includes(category.id) || false;
               return (
-                <label key={category.id} className="flex items-center group cursor-pointer">
+                <label
+                  key={category.id}
+                  className="flex items-center group cursor-pointer"
+                >
                   <input
                     type="checkbox"
                     checked={isChecked}
-                    onChange={(e) => handleCategoryChange(category.id, e.target.checked)}
+                    onChange={(e) =>
+                      handleCategoryChange(category.id, e.target.checked)
+                    }
                     className="rounded border-gray-300 text-negro focus:ring-negro focus:ring-offset-0 transition-colors duration-200"
                   />
                   <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
@@ -165,7 +183,9 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Mínimo</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Mínimo
+                </label>
                 <input
                   type="number"
                   value={priceRange.min}
@@ -178,7 +198,9 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Máximo</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Máximo
+                </label>
                 <input
                   type="number"
                   value={priceRange.max}
@@ -191,24 +213,27 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 />
               </div>
             </div>
-            
+
             {/* Rangos predefinidos */}
             <div className="space-y-2">
-              <p className="text-xs font-medium text-gray-700">Rangos populares:</p>
+              <p className="text-xs font-medium text-gray-700">
+                Rangos populares:
+              </p>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { label: 'Menos de $25', min: 0, max: 25 },
-                  { label: '$25 - $50', min: 25, max: 50 },
-                  { label: '$50 - $100', min: 50, max: 100 },
-                  { label: 'Más de $100', min: 100, max: 500 }
+                  { label: "Menos de $25", min: 0, max: 25 },
+                  { label: "$25 - $50", min: 25, max: 50 },
+                  { label: "$50 - $100", min: 50, max: 100 },
+                  { label: "Más de $100", min: 100, max: 500 },
                 ].map((range) => (
                   <button
                     key={range.label}
                     onClick={() => handlePriceRangeChange(range.min, range.max)}
                     className={`px-3 py-1.5 text-xs rounded-full border transition-all duration-200 ${
-                      priceRange.min === range.min && priceRange.max === range.max
-                        ? 'bg-negro text-white border-negro'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                      priceRange.min === range.min &&
+                      priceRange.max === range.max
+                        ? "bg-negro text-white border-negro"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                     }`}
                   >
                     {range.label}
@@ -226,19 +251,23 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
               <input
                 type="checkbox"
                 checked={filters.featured || false}
-                onChange={(e) => handleFeatureChange('featured', e.target.checked)}
+                onChange={(e) =>
+                  handleFeatureChange("featured", e.target.checked)
+                }
                 className="rounded border-gray-300 text-negro focus:ring-negro focus:ring-offset-0 transition-colors duration-200"
               />
               <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
                 Productos destacados
               </span>
             </label>
-            
+
             <label className="flex items-center group cursor-pointer">
               <input
                 type="checkbox"
                 checked={filters.onSale || false}
-                onChange={(e) => handleFeatureChange('onSale', e.target.checked)}
+                onChange={(e) =>
+                  handleFeatureChange("onSale", e.target.checked)
+                }
                 className="rounded border-gray-300 text-negro focus:ring-negro focus:ring-offset-0 transition-colors duration-200"
               />
               <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
@@ -257,8 +286,8 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onClick={() => handleRatingChange(rating)}
                 className={`w-full flex items-center p-2 rounded-md transition-colors duration-200 ${
                   filters.minRating === rating
-                    ? 'bg-negro text-white'
-                    : 'hover:bg-gray-50 text-gray-700'
+                    ? "bg-negro text-white"
+                    : "hover:bg-gray-50 text-gray-700"
                 }`}
               >
                 <div className="flex items-center">
@@ -267,8 +296,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                       key={i}
                       className={`w-4 h-4 ${
                         i < rating
-                          ? filters.minRating === rating ? 'text-yellow-300' : 'text-yellow-400'
-                          : filters.minRating === rating ? 'text-gray-400' : 'text-gray-300'
+                          ? filters.minRating === rating
+                            ? "text-yellow-300"
+                            : "text-yellow-400"
+                          : filters.minRating === rating
+                          ? "text-gray-400"
+                          : "text-gray-300"
                       }`}
                       fill="currentColor"
                       viewBox="0 0 20 20"

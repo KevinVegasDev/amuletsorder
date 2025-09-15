@@ -51,10 +51,10 @@ export interface WordPressProduct {
   date_created_gmt: string;
   date_modified: string;
   date_modified_gmt: string;
-  type: 'simple' | 'grouped' | 'external' | 'variable';
-  status: 'draft' | 'pending' | 'private' | 'publish';
+  type: "simple" | "grouped" | "external" | "variable";
+  status: "draft" | "pending" | "private" | "publish";
   featured: boolean;
-  catalog_visibility: 'visible' | 'catalog' | 'search' | 'hidden';
+  catalog_visibility: "visible" | "catalog" | "search" | "hidden";
   description: string;
   short_description: string;
   sku: string;
@@ -79,11 +79,11 @@ export interface WordPressProduct {
   download_expiry: number;
   external_url: string;
   button_text: string;
-  tax_status: 'taxable' | 'shipping' | 'none';
+  tax_status: "taxable" | "shipping" | "none";
   tax_class: string;
   manage_stock: boolean;
   stock_quantity: number | null;
-  backorders: 'no' | 'notify' | 'yes';
+  backorders: "no" | "notify" | "yes";
   backorders_allowed: boolean;
   backordered: boolean;
   low_stock_amount: number | null;
@@ -148,7 +148,7 @@ export interface WordPressProduct {
     key: string;
     value: string | number | boolean | null;
   }>;
-  stock_status: 'instock' | 'outofstock' | 'onbackorder';
+  stock_status: "instock" | "outofstock" | "onbackorder";
   has_options: boolean;
   post_password: string;
   global_unique_id: string;
@@ -221,8 +221,8 @@ export interface ProductFilters {
   featured?: boolean;
   search?: string;
   minRating?: number;
-  sortBy?: 'name' | 'price' | 'date' | 'popularity' | 'rating';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "name" | "price" | "date" | "popularity" | "rating";
+  sortOrder?: "asc" | "desc";
 }
 
 // Tipos para respuestas de API
@@ -243,6 +243,36 @@ export interface WordPressAPIConfig {
   version: string;
 }
 
+// Tipos para banners de WordPress
+export interface WordPressBanner {
+  id: number;
+  title: {
+    rendered: string;
+  };
+  content: {
+    rendered: string;
+  };
+  _embedded?: {
+    "wp:featuredmedia"?: Array<{
+      source_url: string;
+      alt_text: string;
+    }>;
+  };
+}
+
+export interface Banner {
+  id: number;
+  title: string;
+  content: string;
+  imageUrl: string;
+  imageAlt: string;
+}
+
 // Utilidades de transformación
 export type WordPressToProduct = (wpProduct: WordPressProduct) => Product;
-export type ProductsToResponse = (products: Product[], total: number, page: number, perPage: number) => ProductsResponse;
+export type ProductsToResponse = (
+  products: Product[],
+  total: number,
+  page: number,
+  perPage: number
+) => ProductsResponse;

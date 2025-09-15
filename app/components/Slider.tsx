@@ -15,11 +15,21 @@ interface SliderProps {
   maxHeight?: string;
 }
 
+/**
+ * Recomendaciones para imágenes del banner:
+ * - Resolución mínima: 1920px de ancho
+ * - Resolución óptima: 3840px de ancho (para pantallas retina/2x)
+ * - Altura proporcional manteniendo aspect ratio 16:9 o 21:9
+ * - Formato: JPEG o WebP optimizado
+ * - Tamaño de archivo recomendado: < 800KB
+ * - No usar imágenes más pequeñas que 1920px de ancho
+ */
+
 const Slider: React.FC<SliderProps> = ({
   images,
   autoPlay = true,
   autoPlayInterval = 6000,
-  maxHeight = "440px",
+  maxHeight = "75vh", // Puedes ajustar este valor según necesites
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -38,8 +48,6 @@ const Slider: React.FC<SliderProps> = ({
     setCurrentIndex(index);
   };
 
-
-
   if (!images || images.length === 0) {
     return (
       <div
@@ -53,8 +61,8 @@ const Slider: React.FC<SliderProps> = ({
 
   return (
     <div
-      className="relative w-full overflow-hidden"
-      style={{ height: maxHeight, maxHeight }}
+      className="relative w-full overflow-hidden h-[60vh] md:h-[75vh]"
+      style={{ maxHeight }}
     >
       {/* Main slider container with fade transition */}
       <div className="relative w-full h-full">
@@ -69,10 +77,9 @@ const Slider: React.FC<SliderProps> = ({
               src={image.src}
               alt={image.alt}
               fill
-              className="object-cover"
-              priority={index === 0}
+              sizes="125vw"
+              className="object-cover "
               quality={90}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
               placeholder="blur"
               blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
             />

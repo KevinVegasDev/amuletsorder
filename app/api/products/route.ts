@@ -32,12 +32,29 @@ function createAuthHeaders(): HeadersInit {
 
 // Función para transformar producto de WordPress a nuestro tipo Product
 function transformWordPressProduct(wpProduct: WordPressProduct): Product {
-  const images: ProductImage[] = wpProduct.images.map((img) => ({
-    id: img.id,
-    src: img.src,
-    alt: img.alt || wpProduct.name,
-    name: img.name || wpProduct.name,
-  }));
+  const images: ProductImage[] = wpProduct.images.map((img) => {
+    // Obtener la URL de imagen de mayor calidad disponible
+    let highQualitySrc = img.src;
+
+    // Intentar obtener imagen de mayor calidad desde la URL original
+    // WordPress a menudo incluye diferentes tamaños en la URL base
+
+    // Como fallback, intentar reemplazar dimensiones pequeñas en la URL
+    if (
+      highQualitySrc.includes("-150x150") ||
+      highQualitySrc.includes("-300x300")
+    ) {
+      console.log("Applying URL replacement fallback");
+      highQualitySrc = highQualitySrc.replace(/-\d+x\d+/, "");
+    }
+
+    return {
+      id: img.id,
+      src: highQualitySrc,
+      alt: img.alt || wpProduct.name,
+      name: img.name || wpProduct.name,
+    };
+  });
 
   const categories: ProductCategory[] = wpProduct.categories.map((cat) => ({
     id: cat.id,
@@ -84,6 +101,23 @@ function transformWordPressProduct(wpProduct: WordPressProduct): Product {
 
 export async function GET(request: NextRequest) {
   try {
+    // Verificar si las credenciales están configuradas
+    if (!API_CONFIG.consumerKey || !API_CONFIG.consumerSecret) {
+      console.log(
+        "WordPress API credentials not configured, returning mock data"
+      );
+      // Retornar datos mock cuando no hay configuración
+      const result: ProductsResponse = {
+        products: [],
+        total: 0,
+        totalPages: 0,
+        currentPage: 1,
+        hasNextPage: false,
+        hasPrevPage: false,
+      };
+      return NextResponse.json(result);
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const perPage = parseInt(searchParams.get("per_page") || "12");
@@ -106,7 +140,11 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get("max_price");
 
     if (categories) params.append("category", categories);
-    if (tags) params.append("tag", tags);
+    if (tags) {
+      console.log("Server API: Tags parameter received:", tags);
+      // Intentar primero con 'tags' (plural) y luego con 'tag' (singular) si no funciona
+      params.append("tags", tags);
+    }
     if (featured === "true") params.append("featured", "true");
     if (onSale === "true") params.append("on_sale", "true");
     if (search) params.append("search", search);
@@ -153,12 +191,57 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const wpProducts: WordPressProduct[] = await response.json();
+    let wpProducts: WordPressProduct[] = await response.json();
+    console.log(
+      "Server API: WordPress response - products count:",
+      wpProducts.length
+    );
+    if (tags) {
+      console.log(
+        "Server API: Products with tags:",
+        wpProducts.map((p) => ({ id: p.id, name: p.name, tags: p.tags }))
+      );
+
+      // Filtrar productos que realmente tengan la etiqueta solicitada
+      const requestedTags = tags
+        .split(",")
+        .map((tag) => tag.trim().toLowerCase());
+      wpProducts = wpProducts.filter((product) => {
+        if (!product.tags || product.tags.length === 0) {
+          return false;
+        }
+        return product.tags.some(
+          (tag) =>
+            requestedTags.includes(tag.slug.toLowerCase()) ||
+            requestedTags.includes(tag.name.toLowerCase())
+        );
+      });
+
+      console.log("Server API: Filtered products count:", wpProducts.length);
+      console.log(
+        "Server API: Filtered products:",
+        wpProducts.map((p) => ({
+          id: p.id,
+          name: p.name,
+          tags: p.tags.map((t) => t.slug),
+        }))
+      );
+    }
+
     const totalHeader = response.headers.get("X-WP-Total");
     const totalPagesHeader = response.headers.get("X-WP-TotalPages");
 
-    const total = totalHeader ? parseInt(totalHeader) : wpProducts.length;
-    const totalPages = totalPagesHeader ? parseInt(totalPagesHeader) : 1;
+    // Actualizar totales basados en productos filtrados
+    const total = tags
+      ? wpProducts.length
+      : totalHeader
+      ? parseInt(totalHeader)
+      : wpProducts.length;
+    const totalPages = tags
+      ? Math.ceil(total / perPage)
+      : totalPagesHeader
+      ? parseInt(totalPagesHeader)
+      : 1;
 
     const products = wpProducts.map(transformWordPressProduct);
 

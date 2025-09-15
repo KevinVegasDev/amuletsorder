@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CartIcon, HeartIcon, PersonIcon } from "./icons";
+import { CartIcon, HeartHeaderIcon, PersonIcon } from "./icons";
 
 const Header = () => {
   return (
@@ -24,22 +24,13 @@ const Header = () => {
 
           {/* Navegación */}
           <nav className="flex items-center text-[24px]">
-            <Link
-              href="/"
-              className="px-4 py-2 font-teko text-black leading-[0] tracking-[0] mt-[3px]"
-            >
+            <Link href="/" className="px-4 py-2 font-teko text-black ">
               + home
             </Link>
-            <Link
-              href="/market"
-              className="px-4 py-2 font-teko text-black leading-[0] tracking-[0] mt-[3px]"
-            >
+            <Link href="/market" className="px-4 py-2 font-teko text-black">
               + Market
             </Link>
-            <Link
-              href="/about-us"
-              className="px-4 py-2 font-teko text-black leading-[0] tracking-[0] mt-[3px]"
-            >
+            <Link href="/about-us" className="px-4 py-2 font-teko text-black">
               + about us
             </Link>
           </nav>
@@ -48,7 +39,7 @@ const Header = () => {
         {/* Iconos de acción */}
         <div className="flex items-center gap-4">
           <CartIcon color="#212121" />
-          <HeartIcon color="#212121" />
+          <HeartHeaderIcon />
           <PersonIcon color="#212121" />
         </div>
       </div>

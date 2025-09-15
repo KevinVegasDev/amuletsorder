@@ -5,7 +5,10 @@ interface HeartIconProps {
   filled?: boolean;
 }
 
-const HeartIcon: React.FC<HeartIconProps> = ({ color = "var(--color-negro)", filled = false }) => {
+const HeartIcon: React.FC<HeartIconProps> = ({
+  color = "var(--color-negro)",
+  filled = false,
+}) => {
   return (
     <svg
       width="25"
