@@ -35,35 +35,3 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Soluciones Tipográficas Implementadas
-
-### Problema de Espaciado en Fuentes
-
-Durante el desarrollo del header, nos encontramos con problemas de espaciado inconsistente causados por las propiedades por defecto de las fuentes (line-height y letter-spacing). Esto creaba espacios no deseados que afectaban el diseño visual.
-
-### Solución Aplicada
-
-Para resolver estos problemas tipográficos, implementamos las siguientes clases de Tailwind CSS:
-
-- **`leading-[0]`**: Establece line-height: 0px, eliminando el espaciado vertical por defecto
-- **`tracking-[0]`**: Establece letter-spacing: 0px, eliminando el espaciado horizontal entre caracteres
-- **Margin compensatorio**: Agregamos margin específico para lograr el centrado visual exacto
-
-### Ventajas de esta Aproximación
-
-1. **Control total**: Eliminamos la dependencia de valores por defecto inconsistentes
-2. **Predictibilidad**: El espaciado es exactamente como lo diseñamos
-3. **Escalabilidad**: Funciona consistentemente en diferentes tamaños de fuente
-4. **Profesional**: Siguiendo las mejores prácticas de tipografía web moderna
-
-### Código Ejemplo
-
-```tsx
-<nav className="flex items-center text-[24px] leading-[0] tracking-[0]">
-  <Link href="/" className="px-4 py-2 text-black">
-    + home
-  </Link>
-</nav>
-```
-
-Esta solución nos permite Solucionar el problema de centrado en el header ya que tenemos un mayor control sobre el espaciado dentro de la fuente
