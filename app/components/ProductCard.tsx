@@ -38,15 +38,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-ES", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "EUR",
+      currency: "USD",
     }).format(price);
   };
 
   return (
     <div
-      className={`group relative bg-white p-1 overflow-hidden flex flex-col w-full ${className}`}
+      className={`group relative bg-white p-1 overflow-hidden flex flex-col w-full max-w-[378px] mx-auto transform transition-all duration-300 ease-in-out hover:scale-[1.02] ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

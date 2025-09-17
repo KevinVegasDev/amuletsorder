@@ -1,6 +1,8 @@
 import Slider from "./components/Slider";
 import HomeProductsSection from "./components/HomeProductsSection";
+import ResumeHome from "./components/ResumeHome";
 import { getBanners } from "./lib/wordpress-api";
+import Footer from "./components/Footer";
 
 export default async function Home() {
   // Obtener los banners desde WordPress
@@ -13,9 +15,9 @@ export default async function Home() {
   }));
 
   return (
-    <main className="px-[50px]">
+    <main className="">
       {/* Hero Section con Slider */}
-      <section className="pt-4">
+      <section className="pt-4 px-[50px]">
         <Slider
           images={sliderImages}
           autoPlay={true}
@@ -26,6 +28,7 @@ export default async function Home() {
 
       {/* Sección de Productos Destacados */}
       <HomeProductsSection />
+      <ResumeHome />
     </main>
   );
 }

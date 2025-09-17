@@ -9,7 +9,7 @@ import {
 import ProductGrid from "./ProductGrid";
 import ProductFilters from "./ProductFilters";
 import MobileFilters from "./MobileFilters";
-import LoadingSpinner from "./LoadingSpinner";
+import ProductSkeleton from "./ProductSkeleton";
 import { NoProductsFound, ServerError } from "./EmptyState";
 import { getProducts } from "../lib/wordpress-api";
 
@@ -408,8 +408,8 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
 
           {/* Contenido de productos */}
           {loading ? (
-            <div className="flex justify-center py-16">
-              <LoadingSpinner size="lg" text="Cargando productos..." />
+            <div className="py-16">
+              <ProductSkeleton count={productsPerPage} />
             </div>
           ) : error ? (
             <ServerError

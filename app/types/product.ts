@@ -188,9 +188,44 @@ export interface ProductImage {
 }
 
 export interface ProductCategory {
+  id: number | string;
+  name: string;
+  slug: string;
+  description?: string;
+  count?: number;
+}
+
+export interface WordPressCategory {
   id: number;
   name: string;
   slug: string;
+  description?: string;
+  count?: number;
+}
+
+export interface ProductTag {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface ProductFilters {
+  categories?: string[];
+  priceRange?: {
+    min: number;
+    max: number;
+  };
+  featured?: boolean;
+  onSale?: boolean;
+  minRating?: number;
+}
+
+export interface ProductCategory {
+  id: string | number;
+  name: string;
+  slug: string;
+  description?: string;
+  count?: number;
 }
 
 export interface WordPressCategory {

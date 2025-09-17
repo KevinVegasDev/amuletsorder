@@ -3,6 +3,7 @@ import { Roboto_Flex } from "next/font/google";
 import "@fontsource-variable/teko";
 import "./globals.css";
 import Header from "./components/header";
+import Footer from "./components/Footer";
 
 const robotoFlex = Roboto_Flex({
   subsets: ["latin"],
@@ -27,6 +28,7 @@ export default function RootLayout({
       >
         <Header />
         {children}
+        <Footer />
       </body>
     </html>
   );

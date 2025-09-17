@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { ProductFilters as ProductFiltersType } from "../types/product";
+import React, { useState, useEffect } from "react";
+import {
+  ProductFilters as ProductFiltersType,
+  ProductCategory,
+} from "../types/product";
+import { getProductCategories } from "../lib/wordpress-api";
 
 interface ProductFiltersProps {
   filters: ProductFiltersType;
@@ -28,15 +32,24 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     max: filters.priceRange?.max || 100,
   });
 
-  // Categorías disponibles (esto debería venir de una API en producción)
-  const categories = [
-    { id: "tshirts", name: "T-Shirts", count: 45 },
-    { id: "hoodies", name: "Hoodies", count: 23 },
-    { id: "accessories", name: "Accesorios", count: 18 },
-    { id: "bags", name: "Bolsas", count: 12 },
-    { id: "mugs", name: "Tazas", count: 8 },
-    { id: "stickers", name: "Stickers", count: 15 },
-  ];
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await getProductCategories();
+        setCategories(cats);
+      } catch (err) {
+        console.error("Error loading categories:", err);
+        setError("Error loading categories");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const toggleSection = (sectionId: string) => {
     setOpenSections((prev) => ({
@@ -45,11 +58,11 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     }));
   };
 
-  const handleCategoryChange = (categoryId: string, checked: boolean) => {
+  const handleCategoryChange = (categorySlug: string, checked: boolean) => {
     const currentCategories = filters.categories || [];
     const newCategories = checked
-      ? [...currentCategories, categoryId]
-      : currentCategories.filter((id) => id !== categoryId);
+      ? [...currentCategories, categorySlug]
+      : currentCategories.filter((slug) => slug !== categorySlug);
 
     onFiltersChange({
       ...filters,
@@ -126,33 +139,60 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     );
   };
 
+  if (loading) {
+    return (
+      <div
+        className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}
+      >
+        <div className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded w-3/4"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        className={`bg-white border border-gray-200 rounded-xl  ${className}`}
+      >
+        <div className="p-6 text-red-500">{error}</div>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}
-    >
+    <div className={`bg-white border border-gray-200 rounded-xl  ${className}`}>
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
           {hasActiveFilters && (
             <button
               onClick={onClearFilters}
               className="text-sm text-negro hover:text-gray-800 font-medium transition-colors duration-200"
             >
-              Limpiar todo
+              Clear all
             </button>
           )}
         </div>
       </div>
 
-      {/* Filtros */}
+      {/* Filters */}
       <div className="p-6 space-y-0">
-        {/* Categorías */}
-        <FilterSection id="categories" title="Categorías">
+        {/* Categories */}
+        <FilterSection id="categories" title="Categories">
           <div className="space-y-3">
             {categories.map((category) => {
               const isChecked =
-                filters.categories?.includes(category.id) || false;
+                filters.categories?.includes(category.slug) || false;
               return (
                 <label
                   key={category.id}
@@ -162,15 +202,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                     type="checkbox"
                     checked={isChecked}
                     onChange={(e) =>
-                      handleCategoryChange(category.id, e.target.checked)
+                      handleCategoryChange(category.slug, e.target.checked)
                     }
-                    className="rounded border-gray-300 text-negro focus:ring-negro focus:ring-offset-0 transition-colors duration-200"
+                    className="form-checkbox h-4 w-4 text-negro border-gray-300 rounded focus:ring-negro focus:ring-2"
                   />
-                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
+                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900">
                     {category.name}
-                  </span>
-                  <span className="ml-auto text-xs text-gray-500">
-                    ({category.count})
                   </span>
                 </label>
               );
@@ -178,13 +215,13 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           </div>
         </FilterSection>
 
-        {/* Rango de Precio */}
-        <FilterSection id="price" title="Precio">
+        {/* Price Range */}
+        <FilterSection id="price" title="Price">
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="flex-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Mínimo
+                  Min
                 </label>
                 <input
                   type="number"
@@ -199,7 +236,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
               </div>
               <div className="flex-1">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Máximo
+                  Max
                 </label>
                 <input
                   type="number"
@@ -214,17 +251,17 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
               </div>
             </div>
 
-            {/* Rangos predefinidos */}
+            {/* Predefined ranges */}
             <div className="space-y-2">
               <p className="text-xs font-medium text-gray-700">
-                Rangos populares:
+                Popular ranges:
               </p>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { label: "Menos de $25", min: 0, max: 25 },
+                  { label: "Under $25", min: 0, max: 25 },
                   { label: "$25 - $50", min: 25, max: 50 },
                   { label: "$50 - $100", min: 50, max: 100 },
-                  { label: "Más de $100", min: 100, max: 500 },
+                  { label: "Over $100", min: 100, max: 500 },
                 ].map((range) => (
                   <button
                     key={range.label}
@@ -244,8 +281,8 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
           </div>
         </FilterSection>
 
-        {/* Características */}
-        <FilterSection id="features" title="Características">
+        {/* Features */}
+        <FilterSection id="features" title="Features">
           <div className="space-y-3">
             <label className="flex items-center group cursor-pointer">
               <input
@@ -257,7 +294,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 className="rounded border-gray-300 text-negro focus:ring-negro focus:ring-offset-0 transition-colors duration-200"
               />
               <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
-                Productos destacados
+                Featured products
               </span>
             </label>
 
@@ -271,14 +308,14 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 className="rounded border-gray-300 text-negro focus:ring-negro focus:ring-offset-0 transition-colors duration-200"
               />
               <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
-                En oferta
+                On sale
               </span>
             </label>
           </div>
         </FilterSection>
 
         {/* Rating */}
-        <FilterSection id="rating" title="Calificación">
+        <FilterSection id="rating" title="Rating">
           <div className="space-y-2">
             {[4, 3, 2, 1].map((rating) => (
               <button
@@ -309,7 +346,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
-                  <span className="ml-2 text-sm">y más</span>
+                  <span className="ml-2 text-sm">and up</span>
                 </div>
               </button>
             ))}
@@ -317,14 +354,14 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         </FilterSection>
       </div>
 
-      {/* Footer con botón de limpiar */}
+      {/* Footer with clear button */}
       {hasActiveFilters && (
         <div className="p-6 border-t border-gray-200">
           <button
             onClick={onClearFilters}
             className="w-full px-4 py-3 text-sm font-medium text-negro border border-negro rounded-lg hover:bg-negro hover:text-white transition-all duration-200"
           >
-            Limpiar todos los filtros
+            Clear all filters
           </button>
         </div>
       )}

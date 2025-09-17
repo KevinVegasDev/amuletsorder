@@ -18,7 +18,8 @@ import {
 const API_CONFIG: WordPressAPIConfig = {
   baseUrl:
     process.env.NEXT_PUBLIC_WORDPRESS_API_URL ||
-    "https://tu-sitio-wordpress.com/wp-json/wc/v3",
+    process.env.WORDPRESS_API_URL ||
+    "http://localhost:8000/wp-json/wc/v3",
   consumerKey: process.env.WORDPRESS_CONSUMER_KEY || "",
   consumerSecret: process.env.WORDPRESS_CONSUMER_SECRET || "",
   version: "v3",
@@ -268,28 +269,26 @@ export async function getHomeProducts(limit: number = 8): Promise<Product[]> {
 // Función para obtener categorías de productos
 export async function getProductCategories(): Promise<ProductCategory[]> {
   try {
-    const response = await fetch(
-      `${API_CONFIG.baseUrl}/products/categories?per_page=100`,
-      {
-        headers: createAuthHeaders(),
-        next: { revalidate: 3600 }, // Cache por 1 hora
-      }
-    );
+    // Construir URL absoluta
+    const isClient = typeof window !== "undefined";
+    const baseUrl = isClient
+      ? `${window.location.origin}/api/categories`
+      : `${process.env.NEXTAUTH_URL || "http://localhost:3001"}/api/categories`;
+
+    const response = await fetch(baseUrl, {
+      cache: "no-store",
+    });
 
     if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "Unknown error" }));
       throw new Error(
-        `Error fetching categories: ${response.status} ${response.statusText}`
+        errorData.error || `Error fetching categories: ${response.status}`
       );
     }
 
-    const categories: WordPressCategory[] = await response.json();
-    return categories.map(
-      (cat: WordPressCategory): ProductCategory => ({
-        id: cat.id,
-        name: cat.name,
-        slug: cat.slug,
-      })
-    );
+    return await response.json();
   } catch (error) {
     console.error("Error fetching categories:", error);
     return [];
@@ -350,10 +349,13 @@ export async function searchProducts(
 export async function getBanners(): Promise<Banner[]> {
   try {
     // Construir la URL base para la API REST de WordPress
-    const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace('/wc/v3', '/wp/v2');
-    console.log('🔗 URL base de WordPress API:', wpApiUrl);
+    const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace(
+      "/wc/v3",
+      "/wp/v2"
+    );
+    console.log("🔗 URL base de WordPress API:", wpApiUrl);
 
-    console.log('🎯 Intentando obtener el ID de la categoría Banner...');
+    console.log("🎯 Intentando obtener el ID de la categoría Banner...");
     const categoriesResponse = await fetch(
       `${wpApiUrl}/categories?slug=Banner`,
       {
@@ -361,24 +363,29 @@ export async function getBanners(): Promise<Banner[]> {
       }
     );
 
-    console.log('📊 Estado de la respuesta de categorías:', categoriesResponse.status);
-    
+    console.log(
+      "📊 Estado de la respuesta de categorías:",
+      categoriesResponse.status
+    );
+
     if (!categoriesResponse.ok) {
-      throw new Error(`Error obteniendo categoría banner: ${categoriesResponse.status} ${categoriesResponse.statusText}`);
+      throw new Error(
+        `Error obteniendo categoría banner: ${categoriesResponse.status} ${categoriesResponse.statusText}`
+      );
     }
 
     const categories = await categoriesResponse.json();
-    console.log('📦 Categorías encontradas:', categories);
+    console.log("📦 Categorías encontradas:", categories);
 
     if (!categories.length) {
-      console.error('❌ No se encontró la categoría banner');
+      console.error("❌ No se encontró la categoría banner");
       return [];
     }
 
     const categoryId = categories[0].id;
-    console.log('🎯 ID de la categoría banner:', categoryId);
+    console.log("🎯 ID de la categoría banner:", categoryId);
 
-    console.log('🎯 Intentando obtener posts de la categoría...');
+    console.log("🎯 Intentando obtener posts de la categoría...");
     const postsResponse = await fetch(
       `${wpApiUrl}/posts?categories=${categoryId}&_embed`,
       {
@@ -386,29 +393,34 @@ export async function getBanners(): Promise<Banner[]> {
       }
     );
 
-    console.log('📊 Estado de la respuesta de posts:', postsResponse.status);
+    console.log("📊 Estado de la respuesta de posts:", postsResponse.status);
 
     if (!postsResponse.ok) {
-      throw new Error(`Error obteniendo posts de banner: ${postsResponse.status} ${postsResponse.statusText}`);
+      throw new Error(
+        `Error obteniendo posts de banner: ${postsResponse.status} ${postsResponse.statusText}`
+      );
     }
 
     const posts: WordPressBanner[] = await postsResponse.json();
-    console.log('📦 Posts de banner obtenidos:', posts);
-    
+    console.log("📦 Posts de banner obtenidos:", posts);
+
     // Transformar los posts a un formato más simple para los banners
-    const banners = posts.map((post: WordPressBanner): Banner => ({
-      id: post.id,
-      title: post.title.rendered,
-      content: post.content.rendered,
-      imageUrl: post._embedded?.['wp:featuredmedia']?.[0]?.source_url || '',
-      imageAlt: post._embedded?.['wp:featuredmedia']?.[0]?.alt_text || post.title.rendered,
-    }));
+    const banners = posts.map(
+      (post: WordPressBanner): Banner => ({
+        id: post.id,
+        title: post.title.rendered,
+        content: post.content.rendered,
+        imageUrl: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url || "",
+        imageAlt:
+          post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ||
+          post.title.rendered,
+      })
+    );
 
-    console.log('✅ Banners transformados:', banners);
+    console.log("✅ Banners transformados:", banners);
     return banners;
-
   } catch (error) {
-    console.error('❌ Error al obtener banners:', error);
+    console.error("❌ Error al obtener banners:", error);
     return [];
   }
 }

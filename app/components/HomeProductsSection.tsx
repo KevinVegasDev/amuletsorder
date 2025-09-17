@@ -1,29 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Product } from "../types/product";
+import { Product, ProductCategory } from "../types/product";
 import { getHomeProducts } from "../lib/wordpress-api";
 import ProductGrid from "./ProductGrid";
-import LoadingSpinner from "./LoadingSpinner";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import ProductSkeleton from "./ProductSkeleton";
+import { NoProductsFound } from "./EmptyState";
+import { getProductCategories } from "../lib/wordpress-api";
 
 interface HomeProductsSectionProps {
   className?: string;
 }
-
-// Categorías predefinidas que se pueden controlar desde aquí
-const CATEGORIES = [
-  { id: "all", name: "All" },
-  { id: "footwear", name: "Footwear" },
-  { id: "hoodies", name: "Hoodies" },
-  { id: "necklace", name: "Necklace" },
-  { id: "bags", name: "Bags" },
-  { id: "jewelry", name: "Jewelry" },
-  { id: "t-shirts", name: "T-Shirts" },
-  { id: "pants", name: "Pants" },
-  { id: "jeans", name: "Jeans" },
-  { id: "joggers", name: "Joggers" },
-];
 
 const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
   className = "",
@@ -31,28 +19,43 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+
+  // Cargar categorías al inicio
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await getProductCategories();
+        const uncategorizedIndex = cats.findIndex(cat => cat.slug === 'uncategorized');
+        if (uncategorizedIndex !== -1) {
+          cats[uncategorizedIndex].name = 'All';
+          setCategories(cats);
+          setSelectedCategory('uncategorized');
+        } else {
+          setCategories(cats);
+        }
+      } catch (err) {
+        console.error("Error loading categories:", err);
+        setError("Error loading categories");
+      }
+    };
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        console.log("HomeProductsSection: Starting to fetch home products...");
         const homeProducts = await getHomeProducts(12);
-        console.log(
-          "HomeProductsSection: Received products:",
-          homeProducts.length
-        );
-        console.log(
-          "HomeProductsSection: Products details:",
-          homeProducts.map((p) => ({ id: p.id, name: p.name, tags: p.tags }))
-        );
         setProducts(homeProducts);
         setFilteredProducts(homeProducts);
       } catch (error) {
         console.error("Error fetching home products:", error);
+        setError("Error loading products");
       } finally {
         setLoading(false);
       }
@@ -62,10 +65,10 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
   }, []);
 
   useEffect(() => {
-    let filtered = products;
+    let filtered = [...products];
 
     // Filtrar por búsqueda
-    if (searchQuery.trim()) {
+    if (searchQuery) {
       filtered = filtered.filter(
         (product) =>
           product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -73,25 +76,26 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
       );
     }
 
-    // Filtrar por categoría (simulado - en el futuro se puede conectar con categorías reales)
-    if (selectedCategory !== "all") {
-      // Por ahora solo filtramos por "all", pero se puede extender
-      // filtered = filtered.filter(product => product.categories.some(cat => cat.slug === selectedCategory));
+    // Filtrar por categoría
+    if (selectedCategory !== "uncategorized") {
+      filtered = filtered.filter((product) =>
+        product.categories.some((cat) => cat.slug === selectedCategory)
+      );
     }
 
     setFilteredProducts(filtered);
   }, [products, searchQuery, selectedCategory]);
 
-  const handleCategoryClick = (categoryId: string) => {
-    setSelectedCategory(categoryId);
+  const handleCategoryClick = (categorySlug: string) => {
+    setSelectedCategory(categorySlug);
   };
 
-  const getCategoryClasses = (categoryId: string) => {
-    const isActive = selectedCategory === categoryId;
-    const isHovered = hoveredCategory === categoryId;
+  const getCategoryClasses = (categorySlug: string) => {
+    const isActive = selectedCategory === categorySlug;
+    const isHovered = hoveredCategory === categorySlug;
 
     let classes =
-      "flex items-center gap-3 px-4 py-2 cursor-pointer transition-all duration-200 ";
+      "flex items-center gap-3 px-4 py-2 transition-all duration-200 ";
 
     if (isActive) {
       classes += "text-black font-medium";
@@ -104,8 +108,8 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
     return classes;
   };
 
-  const getBulletClasses = (categoryId: string) => {
-    const isActive = selectedCategory === categoryId;
+  const getBulletClasses = (categorySlug: string) => {
+    const isActive = selectedCategory === categorySlug;
 
     let classes = "w-2 h-2 rounded-full transition-all duration-200 ";
 
@@ -122,47 +126,56 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
     return (
       <div className={`pt-4 pb-16 ${className}`}>
         <div className="container mx-auto px-4">
-          <LoadingSpinner />
+          <ProductSkeleton count={8} />
         </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className={`pt-4 pb-16 `}>
-      <div className="">
+    <div className={`min-h-screen pt-4 pb-16 flex flex-col px-[50px]`}>
+      <div className="flex-1 h-full">
         {/* Layout principal: Filtros a la izquierda, productos a la derecha */}
-        <div className="flex gap-8">
+        <div className="flex gap-2 h-full">
           {/* Panel de filtros - Lado izquierdo */}
-          <div className="w-80 flex-shrink-0 bg-white p-4">
+          <div className="w-80 bg-blanco p-4 flex flex-col gap-[20px] ">
             {/* Buscador */}
-            <div className="">
-              <div className="flex items-center justify-between bg-gray-100 rounded-[32px] px-8 py-[18px]">
+            <div className="flex-none">
+              <div className="flex justify-between bg-gris rounded-[32px] px-8 py-[18px]">
                 <input
                   type="text"
                   placeholder="Look for a product"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 bg-transparent border-none outline-none text-sm font-light placeholder-gray-500"
-                  style={{ fontFamily: "Teko, sans-serif" }}
                 />
                 <MagnifyingGlassIcon className="w-6 h-6 text-gray-400" />
               </div>
             </div>
 
             {/* Lista de categorías */}
-            <div className="px-6">
-              <div className="space-y-1">
-                {CATEGORIES.map((category) => (
+            <div className="flex-1 overflow-auto">
+              <div className="space-y-2">
+                {categories.map((category) => (
                   <div
                     key={category.id}
-                    className={getCategoryClasses(category.id)}
-                    onClick={() => handleCategoryClick(category.id)}
-                    onMouseEnter={() => setHoveredCategory(category.id)}
+                    className={getCategoryClasses(category.slug)}
+                    onClick={() => handleCategoryClick(category.slug)}
+                    onMouseEnter={() => setHoveredCategory(category.slug)}
                     onMouseLeave={() => setHoveredCategory(null)}
                   >
-                    <div className={getBulletClasses(category.id)} />
-                    <span className="text-sm">{category.name}</span>
+                    <div className={getBulletClasses(category.slug)} />
+                    <span className="text-lg font-roboto-flex font-light cursor-pointer">
+                      {category.name}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -170,7 +183,7 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
           </div>
 
           {/* Grid de productos - Lado derecho */}
-          <div className="flex-1">
+          <div className="flex-1 h-full overflow-auto">
             {filteredProducts.length > 0 ? (
               <ProductGrid
                 products={filteredProducts}
@@ -180,30 +193,15 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
                 onAddToWishlist={(product) => {
                   console.log("Agregar a favoritos:", product);
                 }}
-                className=""
+                className="min-h-full"
               />
             ) : (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-6 text-gray-300">
-                  <MagnifyingGlassIcon className="w-full h-full" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  No se encontraron productos
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  {searchQuery
-                    ? "No hay productos que coincidan con tu búsqueda."
-                    : "No hay productos destacados disponibles."}
-                </p>
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Limpiar filtros
-                  </button>
-                )}
-              </div>
+              <NoProductsFound
+                onClearFilters={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("all");
+                }}
+              />
             )}
           </div>
         </div>
