@@ -30,11 +30,13 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
     const loadCategories = async () => {
       try {
         const cats = await getProductCategories();
-        const uncategorizedIndex = cats.findIndex(cat => cat.slug === 'uncategorized');
+        const uncategorizedIndex = cats.findIndex(
+          (cat) => cat.slug === "uncategorized"
+        );
         if (uncategorizedIndex !== -1) {
-          cats[uncategorizedIndex].name = 'All';
+          cats[uncategorizedIndex].name = "All";
           setCategories(cats);
-          setSelectedCategory('uncategorized');
+          setSelectedCategory("uncategorized");
         } else {
           setCategories(cats);
         }
