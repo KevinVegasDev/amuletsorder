@@ -19,7 +19,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
 }) => {
   return (
     <div
-      className={`grid grid-cols-[repeat(auto-fit,minmax(329px,378px))] gap-6 justify-start transition-all duration-300 ease-in-out ${className}`}
+      className={`grid grid-cols-[repeat(auto-fit,minmax(329px,1fr))] gap-6 justify-start transition-all duration-300 ease-in-out ${className}`}
     >
       {products.map((product) => (
         <ProductCard
