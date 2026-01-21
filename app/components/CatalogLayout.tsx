@@ -12,6 +12,8 @@ import MobileFilters from "./MobileFilters";
 import ProductSkeleton from "./ProductSkeleton";
 import { NoProductsFound, ServerError } from "./EmptyState";
 import { getProducts } from "../lib/wordpress-api";
+import { useCart } from "../contexts/CartContext";
+import { useWishlist } from "../contexts/WishlistContext";
 
 interface CatalogLayoutProps {
   initialProducts?: ProductsResponse;
@@ -114,15 +116,21 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     loadProducts(1, emptyFilters, productsPerPage);
   };
 
+  // Contextos
+  const { addToCart } = useCart();
+  const { toggleWishlist } = useWishlist();
+
   // Manejar acciones de productos
   const handleAddToCart = (product: Product) => {
-    // TODO: Implementar lógica del carrito
-    console.log("Agregar al carrito:", product);
+    // Validar stock antes de agregar
+    if (!product.inStock) {
+      return;
+    }
+    addToCart(product, 1);
   };
 
   const handleAddToWishlist = (product: Product) => {
-    // TODO: Implementar lógica de favoritos
-    console.log("Agregar a favoritos:", product);
+    toggleWishlist(product);
   };
 
   // Estado para el ancho de ventana

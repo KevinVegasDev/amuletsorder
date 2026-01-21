@@ -19,6 +19,14 @@ const config: Config = {
         extrabold: "800",
         black: "900",
       },
+      keyframes: {
+        shine: {
+          to: { backgroundPosition: "200% center" },
+        },
+      },
+      animation: {
+        shine: "shine 2s linear infinite",
+      },
     },
   },
   plugins: [],

@@ -19,7 +19,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
 }) => {
   return (
     <div
-      className={`grid grid-cols-[repeat(auto-fit,minmax(329px,1fr))] gap-6 justify-start transition-all duration-300 ease-in-out ${className}`}
+      className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8 justify-start items-stretch transition-all duration-300 ease-in-out ${className}`}
     >
       {products.map((product) => (
         <ProductCard
@@ -27,6 +27,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           product={product}
           onAddToCart={onAddToCart}
           onAddToWishlist={onAddToWishlist}
+          showCartButtons={true}
         />
       ))}
     </div>

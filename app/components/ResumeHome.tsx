@@ -15,10 +15,10 @@ const ResumeHome = () => {
         />
       </div>
       <div className="flex-1 flex flex-col justify-center">
-        <h4 className="text-[64px] font-medium font-teko">
+        <h4 className="text-[64px] font-medium">
           Lorem Ipsum dolor sit amet
         </h4>
-        <p className="font-light font-teko text-[24px] text-gray-600 leading-relaxed">
+        <p className="font-light text-[24px] text-gray-600 leading-relaxed">
           Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
           eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
           minim veniam, quis nostrud exercitation ullamco laboris nisi ut

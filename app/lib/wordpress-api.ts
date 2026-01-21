@@ -2,7 +2,10 @@
 
 import {
   WordPressProduct,
+  WordPressVariation,
   Product,
+  ProductVariation,
+  ProductAttribute,
   ProductsResponse,
   ProductFilters,
   WordPressAPIConfig,
@@ -12,6 +15,8 @@ import {
   WordPressCategory,
   Banner,
   WordPressBanner,
+  Collection,
+  WordPressCollection,
 } from "../types/product";
 
 // Configuración de la API de WordPress (solo para funciones que aún usan llamadas directas)
@@ -36,9 +41,42 @@ function createAuthHeaders(): HeadersInit {
   };
 }
 
+// Función para transformar variación de WordPress a nuestro tipo ProductVariation
+function transformWordPressVariation(
+  wpVariation: WordPressVariation
+): ProductVariation {
+  const attributes: Record<string, string> = {};
+  wpVariation.attributes.forEach((attr) => {
+    attributes[attr.name] = attr.option;
+  });
+
+  return {
+    id: wpVariation.id,
+    sku: wpVariation.sku,
+    price: parseFloat(wpVariation.price) || 0,
+    regularPrice: parseFloat(wpVariation.regular_price) || 0,
+    salePrice: wpVariation.sale_price
+      ? parseFloat(wpVariation.sale_price)
+      : undefined,
+    onSale: wpVariation.on_sale,
+    inStock: wpVariation.stock_status === "instock",
+    stockQuantity: wpVariation.stock_quantity ?? undefined,
+    attributes,
+    image: wpVariation.image
+      ? {
+          id: wpVariation.image.id,
+          src: wpVariation.image.src,
+          alt: wpVariation.image.alt,
+          name: wpVariation.image.alt,
+        }
+      : undefined,
+  };
+}
+
 // Función para transformar producto de WordPress a nuestro tipo Product
 export function transformWordPressProduct(
-  wpProduct: WordPressProduct
+  wpProduct: WordPressProduct,
+  variations?: ProductVariation[]
 ): Product {
   const images: ProductImage[] = wpProduct.images.map((img) => {
     // Obtener la URL de imagen de mayor calidad disponible
@@ -75,6 +113,18 @@ export function transformWordPressProduct(
     slug: tag.slug,
   }));
 
+  // Transformar atributos
+  const attributes: ProductAttribute[] | undefined = wpProduct.attributes
+    ?.filter((attr) => attr.variation)
+    .map((attr) => ({
+      id: attr.id,
+      name: attr.name,
+      slug: attr.name.toLowerCase().replace(/\s+/g, "-"),
+      options: attr.options,
+      variation: attr.variation,
+      position: attr.position,
+  }));
+
   return {
     id: wpProduct.id,
     name: wpProduct.name,
@@ -97,6 +147,9 @@ export function transformWordPressProduct(
     ratingCount: wpProduct.rating_count,
     permalink: wpProduct.permalink,
     featured: wpProduct.featured,
+    type: wpProduct.type,
+    attributes,
+    variations,
     // Buscar datos de Printful en meta_data
     printfulSyncProductId: (() => {
       const syncProductMeta = wpProduct.meta_data.find(
@@ -150,9 +203,17 @@ export async function getProducts(
 
     // Construir URL absoluta
     const isClient = typeof window !== "undefined";
-    const baseUrl = isClient
-      ? `${window.location.origin}/api/products`
-      : `${process.env.NEXTAUTH_URL || "http://localhost:3001"}/api/products`;
+    // En servidor, construir URL completa
+    let baseUrl: string;
+    if (isClient) {
+      baseUrl = `${window.location.origin}/api/products`;
+    } else {
+      // En servidor, usar la URL base del entorno o localhost:3000
+      const host = process.env.NEXT_PUBLIC_APP_URL || 
+                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                   `http://localhost:${process.env.PORT || 3000}`;
+      baseUrl = `${host}/api/products`;
+    }
 
     const response = await fetch(`${baseUrl}?${params}`, {
       cache: "no-store",
@@ -171,6 +232,37 @@ export async function getProducts(
   } catch (error) {
     console.error("Error fetching products:", error);
     throw error;
+  }
+}
+
+// Función para obtener variaciones de un producto
+async function getProductVariations(
+  productId: number
+): Promise<ProductVariation[]> {
+  try {
+    const response = await fetch(
+      `${API_CONFIG.baseUrl}/products/${productId}/variations`,
+      {
+        headers: createAuthHeaders(),
+        next: { revalidate: 300 },
+      }
+    );
+
+    if (!response.ok) {
+      // Si el producto no tiene variaciones, retornar array vacío
+      if (response.status === 404) {
+        return [];
+      }
+      throw new Error(
+        `Error fetching variations: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const wpVariations: WordPressVariation[] = await response.json();
+    return wpVariations.map(transformWordPressVariation);
+  } catch (error) {
+    console.error("Error fetching product variations:", error);
+    return [];
   }
 }
 
@@ -197,7 +289,15 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       return null;
     }
 
-    return transformWordPressProduct(wpProducts[0]);
+    const wpProduct = wpProducts[0];
+
+    // Si el producto es variable, obtener sus variaciones
+    let variations: ProductVariation[] | undefined;
+    if (wpProduct.type === "variable" && wpProduct.variations.length > 0) {
+      variations = await getProductVariations(wpProduct.id);
+    }
+
+    return transformWordPressProduct(wpProduct, variations);
   } catch (error) {
     console.error("Error fetching product by slug:", error);
     return null;
@@ -271,9 +371,17 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
   try {
     // Construir URL absoluta
     const isClient = typeof window !== "undefined";
-    const baseUrl = isClient
-      ? `${window.location.origin}/api/categories`
-      : `${process.env.NEXTAUTH_URL || "http://localhost:3001"}/api/categories`;
+    // En servidor, construir URL completa
+    let baseUrl: string;
+    if (isClient) {
+      baseUrl = `${window.location.origin}/api/categories`;
+    } else {
+      // En servidor, usar la URL base del entorno o localhost:3000
+      const host = process.env.NEXT_PUBLIC_APP_URL || 
+                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+                   `http://localhost:${process.env.PORT || 3000}`;
+      baseUrl = `${host}/api/categories`;
+    }
 
     const response = await fetch(baseUrl, {
       cache: "no-store",
@@ -421,6 +529,86 @@ export async function getBanners(): Promise<Banner[]> {
     return banners;
   } catch (error) {
     console.error("❌ Error al obtener banners:", error);
+    return [];
+  }
+}
+
+// Función para obtener colecciones (entradas con categoría "coleccion")
+export async function getCollections(): Promise<Collection[]> {
+  try {
+    // Construir la URL base para la API REST de WordPress
+    const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace(
+      "/wc/v3",
+      "/wp/v2"
+    );
+    console.log("🔗 URL base de WordPress API para colecciones:", wpApiUrl);
+
+    console.log("🎯 Intentando obtener el ID de la categoría coleccion...");
+    const categoriesResponse = await fetch(
+      `${wpApiUrl}/categories?slug=coleccion`,
+      {
+        next: { revalidate: 300 }, // Cache por 5 minutos
+      }
+    );
+
+    console.log(
+      "📊 Estado de la respuesta de categorías:",
+      categoriesResponse.status
+    );
+
+    if (!categoriesResponse.ok) {
+      throw new Error(
+        `Error obteniendo categoría coleccion: ${categoriesResponse.status} ${categoriesResponse.statusText}`
+      );
+    }
+
+    const categories = await categoriesResponse.json();
+    console.log("📦 Categorías encontradas:", categories);
+
+    if (!categories.length) {
+      console.error("❌ No se encontró la categoría coleccion");
+      return [];
+    }
+
+    const categoryId = categories[0].id;
+    console.log("🎯 ID de la categoría coleccion:", categoryId);
+
+    console.log("🎯 Intentando obtener posts de la categoría coleccion...");
+    const postsResponse = await fetch(
+      `${wpApiUrl}/posts?categories=${categoryId}&_embed&per_page=2`,
+      {
+        next: { revalidate: 300 }, // Cache por 5 minutos
+      }
+    );
+
+    console.log("📊 Estado de la respuesta de posts:", postsResponse.status);
+
+    if (!postsResponse.ok) {
+      throw new Error(
+        `Error obteniendo posts de coleccion: ${postsResponse.status} ${postsResponse.statusText}`
+      );
+    }
+
+    const posts: WordPressCollection[] = await postsResponse.json();
+    console.log("📦 Posts de coleccion obtenidos:", posts);
+
+    // Transformar los posts a un formato más simple para las colecciones
+    const collections = posts.map(
+      (post: WordPressCollection): Collection => ({
+        id: post.id,
+        title: post.title.rendered,
+        description: post.excerpt.rendered.replace(/<[^>]*>/g, ""), // Remover HTML del excerpt
+        imageUrl: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url || "",
+        imageAlt:
+          post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ||
+          post.title.rendered,
+      })
+    );
+
+    console.log("✅ Colecciones transformadas:", collections);
+    return collections;
+  } catch (error) {
+    console.error("❌ Error al obtener colecciones:", error);
     return [];
   }
 }

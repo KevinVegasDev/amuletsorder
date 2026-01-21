@@ -154,6 +154,61 @@ export interface WordPressProduct {
   global_unique_id: string;
 }
 
+// Tipo para variaciones de producto de WordPress
+export interface WordPressVariation {
+  id: number;
+  sku: string;
+  price: string;
+  regular_price: string;
+  sale_price: string;
+  on_sale: boolean;
+  purchasable: boolean;
+  visible: boolean;
+  stock_status: "instock" | "outofstock" | "onbackorder";
+  stock_quantity: number | null;
+  manage_stock: boolean;
+  attributes: Array<{
+    id: number;
+    name: string;
+    option: string;
+  }>;
+  image: {
+    id: number;
+    src: string;
+    alt: string;
+  } | null;
+  weight: string;
+  dimensions: {
+    length: string;
+    width: string;
+    height: string;
+  };
+}
+
+// Tipo para variación de producto en el frontend
+export interface ProductVariation {
+  id: number;
+  sku: string;
+  price: number;
+  regularPrice: number;
+  salePrice?: number;
+  onSale: boolean;
+  inStock: boolean;
+  stockQuantity?: number;
+  attributes: Record<string, string>; // { "Talla": "M", "Color": "Black" }
+  image?: ProductImage;
+}
+
+// Tipo para atributo de producto (talla, color, etc.)
+export interface ProductAttribute {
+  id: number;
+  name: string;
+  slug: string;
+  options: string[];
+  variation: boolean;
+  position: number;
+}
+
 // Tipo simplificado para mostrar en el frontend
 export interface Product {
   id: number;
@@ -175,6 +230,10 @@ export interface Product {
   ratingCount: number;
   permalink: string;
   featured: boolean;
+  // Variaciones y atributos
+  type: "simple" | "variable" | "grouped" | "external";
+  attributes?: ProductAttribute[];
+  variations?: ProductVariation[];
   // Datos específicos de Printful
   printfulVariants?: PrintfulVariant[];
   printfulSyncProductId?: number;
@@ -301,6 +360,35 @@ export interface Banner {
   content: string;
   imageUrl: string;
   imageAlt: string;
+}
+
+// Tipos para colecciones de WordPress
+export interface WordPressCollection {
+  id: number;
+  title: {
+    rendered: string;
+  };
+  excerpt: {
+    rendered: string;
+  };
+  content: {
+    rendered: string;
+  };
+  _embedded?: {
+    "wp:featuredmedia"?: Array<{
+      source_url: string;
+      alt_text: string;
+    }>;
+  };
+}
+
+export interface Collection {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl: string;
+  imageAlt: string;
+  link?: string;
 }
 
 // Utilidades de transformación
