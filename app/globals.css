@@ -35,6 +35,16 @@ body {
   background-color: var(--color-gris);
 }
 
+/* Ocultar scrollbar pero mantener funcionalidad de scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
 :root {
   --main: oklch(0.97 0 0);
   --main-secondary: oklch(97% 0 0);

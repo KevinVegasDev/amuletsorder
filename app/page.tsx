@@ -7,6 +7,10 @@ import { loadProductsData } from "./lib/product-helpers";
 import Hero from "./components/Hero";
 import CollectionSection from "./components/CollectionSection";
 import { getCollectionsData } from "./lib/collection-helpers";
+import RecommendedSection from "./components/RecommendedSection";
+import { getRecommendedProductsData } from "./lib/recommended-helpers";
+import Trending from "./components/Trending";
+import { getTrendingProductsData } from "./lib/trending-helpers";
 
 export default async function Home() {
   // Obtener y transformar los banners desde WordPress
@@ -21,8 +25,14 @@ export default async function Home() {
     },
   });
 
-  // En el componente:
-const collections = await getCollectionsData();
+  // Obtener colecciones
+  const collections = await getCollectionsData();
+
+  // Obtener productos recomendados
+  const recommendedProducts = await getRecommendedProductsData();
+
+  // Obtener productos trending
+  const trendingProducts = await getTrendingProductsData();
 
   return (
     <main className="">
@@ -44,12 +54,13 @@ const collections = await getCollectionsData();
       />
       <CollectionSection collections={collections} />
 
-      {/* CTA con efecto Glass - Full Screen */}
-      <GlassCTA
-        title="Find the piece that resonates with you"
-        buttonText="Explore Amulets"
-        buttonLink="/market"
-      />
+      {/* Sección de Productos Recomendados */}
+      <RecommendedSection products={recommendedProducts} />
+
+      {/* Sección Trending */}
+      <Trending products={trendingProducts} />
+
+      
 
       <ResumeHome />
     </main>

@@ -31,6 +31,7 @@ const Hero: React.FC<HeroProps> = ({
           className="object-cover"
           priority
           quality={90}
+          unoptimized={true}
         />
         {/* Gradiente lineal: transparente (0%) a negro (100%) */}
         <div

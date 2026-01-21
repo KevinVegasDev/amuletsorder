@@ -317,6 +317,104 @@ export async function getFeaturedProducts(
   }
 }
 
+// Función para obtener productos recomendados (con etiqueta "recomendado")
+export async function getRecommendedProducts(limit: number = 10): Promise<Product[]> {
+  try {
+    console.log("⭐ Fetching recommended products...");
+
+    // Intentar obtener productos con etiqueta "recomendado" usando slug
+    console.log('🔍 Trying to get products with "recomendado" tag slug...');
+    const filters: ProductFilters = {
+      tags: ["recomendado"], // Usar slug
+    };
+    const response = await getProducts(1, limit, filters);
+    console.log(
+      `📦 Recommended products found with slug: ${response.products.length}`
+    );
+
+    if (response.products.length > 0) {
+      console.log("✅ Successfully found recommended products with slug!");
+      return response.products;
+    }
+
+    // Si no hay productos con etiqueta "recomendado", usar productos destacados como fallback
+    console.log(
+      "⭐ No recommended products found with slug, using featured products as fallback"
+    );
+    const fallbackResponse = await getProducts(1, limit, { featured: true });
+    console.log(
+      `📦 Featured products found: ${fallbackResponse.products.length}`
+    );
+    return fallbackResponse.products;
+  } catch (error) {
+    console.error("❌ Error fetching recommended products:", error);
+    // Fallback final: obtener productos destacados
+    try {
+      console.log("🔄 Attempting fallback to featured products...");
+      const fallbackResponse = await getProducts(1, limit, { featured: true });
+      console.log(
+        `📦 Fallback featured products found: ${fallbackResponse.products.length}`
+      );
+      return fallbackResponse.products;
+    } catch (fallbackError) {
+      console.error(
+        "❌ Error fetching fallback featured products:",
+        fallbackError
+      );
+      return [];
+    }
+  }
+}
+
+// Función para obtener productos trending (con etiqueta "trending")
+export async function getTrendingProducts(limit: number = 3): Promise<Product[]> {
+  try {
+    console.log("🔥 Fetching trending products...");
+
+    // Intentar obtener productos con etiqueta "trending" usando slug
+    console.log('🔍 Trying to get products with "trending" tag slug...');
+    const filters: ProductFilters = {
+      tags: ["trending"], // Usar slug
+    };
+    const response = await getProducts(1, limit, filters);
+    console.log(
+      `📦 Trending products found with slug: ${response.products.length}`
+    );
+
+    if (response.products.length > 0) {
+      console.log("✅ Successfully found trending products with slug!");
+      return response.products;
+    }
+
+    // Si no hay productos con etiqueta "trending", usar productos destacados como fallback
+    console.log(
+      "⭐ No trending products found with slug, using featured products as fallback"
+    );
+    const fallbackResponse = await getProducts(1, limit, { featured: true });
+    console.log(
+      `📦 Featured products found: ${fallbackResponse.products.length}`
+    );
+    return fallbackResponse.products;
+  } catch (error) {
+    console.error("❌ Error fetching trending products:", error);
+    // Fallback final: obtener productos destacados
+    try {
+      console.log("🔄 Attempting fallback to featured products...");
+      const fallbackResponse = await getProducts(1, limit, { featured: true });
+      console.log(
+        `📦 Fallback featured products found: ${fallbackResponse.products.length}`
+      );
+      return fallbackResponse.products;
+    } catch (fallbackError) {
+      console.error(
+        "❌ Error fetching fallback featured products:",
+        fallbackError
+      );
+      return [];
+    }
+  }
+}
+
 // Función para obtener productos destacados para el home (con etiqueta "home")
 export async function getHomeProducts(limit: number = 8): Promise<Product[]> {
   try {
