@@ -89,7 +89,7 @@ export interface WooCommerceErrorResponse {
   message: string;
   data?: {
     status: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

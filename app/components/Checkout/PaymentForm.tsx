@@ -69,7 +69,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               value="card"
               checked={paymentMethod.type === "card"}
               onChange={(e) =>
-                onPaymentMethodChange({ type: e.target.value as any })
+                onPaymentMethodChange({ 
+                  type: e.target.value as "card" | "paypal" | "apple_pay" | "google_pay" 
+                })
               }
               className="mr-3 h-4 w-4 text-negro focus:ring-negro"
             />
@@ -104,7 +106,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               value="paypal"
               checked={paymentMethod.type === "paypal"}
               onChange={(e) =>
-                onPaymentMethodChange({ type: e.target.value as any })
+                onPaymentMethodChange({ 
+                  type: e.target.value as "card" | "paypal" | "apple_pay" | "google_pay" 
+                })
               }
               className="mr-3 h-4 w-4 text-negro focus:ring-negro"
             />

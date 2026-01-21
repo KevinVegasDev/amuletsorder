@@ -29,7 +29,7 @@ const loadWishlistFromStorage = (): WishlistItem[] => {
     if (!stored) return [];
 
     const parsed = JSON.parse(stored);
-    return parsed.map((item: any) => ({
+    return parsed.map((item: WishlistItem) => ({
       ...item,
       addedAt: item.addedAt ? new Date(item.addedAt) : new Date(),
     }));

@@ -36,7 +36,7 @@ const loadCartFromStorage = (): CartItem[] => {
     
     const parsed = JSON.parse(stored);
     // Convertir addedAt de string a Date si existe
-    return parsed.map((item: any) => ({
+    return parsed.map((item: CartItem) => ({
       ...item,
       addedAt: item.addedAt ? new Date(item.addedAt) : new Date(),
     }));

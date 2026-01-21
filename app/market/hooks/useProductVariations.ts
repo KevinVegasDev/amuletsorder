@@ -97,7 +97,7 @@ export const useProductVariations = ({
     if (onVariationImageChange) {
       if (selectedVariation && selectedVariation.image) {
         // Find variation image in available product images
-        let variationImage = selectedVariation.image;
+        const variationImage = selectedVariation.image;
 
         // If variation image exists in product images, use it
         const foundInProduct = product.images?.find(

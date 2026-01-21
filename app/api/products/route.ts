@@ -90,6 +90,7 @@ function transformWordPressProduct(wpProduct: WordPressProduct): Product {
     ratingCount: wpProduct.rating_count,
     permalink: wpProduct.permalink,
     featured: wpProduct.featured,
+    type: wpProduct.type || "simple",
     printfulSyncProductId: (() => {
       const meta = wpProduct.meta_data.find(
         (meta) => meta.key === "_printful_sync_product_id"
