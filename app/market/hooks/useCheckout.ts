@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useCart } from "../../contexts/CartContext";
 import { useToast } from "../../contexts/ToastContext";
 import {
@@ -315,28 +315,6 @@ export const useCheckout = ({
   );
 
   /**
-   * Ir al siguiente paso
-   */
-  const handleNextStep = useCallback(() => {
-    if (validateCurrentStep()) {
-      if (currentStep < 2) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        handleSubmit();
-      }
-    }
-  }, [currentStep, validateCurrentStep]);
-
-  /**
-   * Volver al paso anterior
-   */
-  const handlePreviousStep = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  }, [currentStep]);
-
-  /**
    * Calcular subtotal
    */
   const calculateSubtotal = useCallback((): number => {
@@ -368,32 +346,6 @@ export const useCheckout = ({
     const tax = calculateTax();
     return subtotal + shipping + tax;
   }, [calculateSubtotal, calculateShipping, calculateTax]);
-
-  /**
-   * Obtener pasos del checkout
-   */
-  const getSteps = useCallback((): CheckoutStep[] => {
-    return [
-      {
-        id: "shipping",
-        label: "Shipping",
-        completed: currentStep > 0,
-        current: currentStep === 0,
-      },
-      {
-        id: "payment",
-        label: "Payment",
-        completed: currentStep > 1,
-        current: currentStep === 1,
-      },
-      {
-        id: "review",
-        label: "Review",
-        completed: false,
-        current: currentStep === 2,
-      },
-    ];
-  }, [currentStep]);
 
   /**
    * Procesar el pedido
@@ -544,6 +496,54 @@ export const useCheckout = ({
     showToast,
     onSuccess,
   ]);
+
+  /**
+   * Ir al siguiente paso
+   */
+  const handleNextStep = useCallback(() => {
+    if (validateCurrentStep()) {
+      if (currentStep < 2) {
+        setCurrentStep(currentStep + 1);
+      } else {
+        handleSubmit();
+      }
+    }
+  }, [currentStep, validateCurrentStep, handleSubmit]);
+
+  /**
+   * Volver al paso anterior
+   */
+  const handlePreviousStep = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep]);
+
+  /**
+   * Obtener pasos del checkout
+   */
+  const getSteps = useCallback((): CheckoutStep[] => {
+    return [
+      {
+        id: "shipping",
+        label: "Shipping",
+        completed: currentStep > 0,
+        current: currentStep === 0,
+      },
+      {
+        id: "payment",
+        label: "Payment",
+        completed: currentStep > 1,
+        current: currentStep === 1,
+      },
+      {
+        id: "review",
+        label: "Review",
+        completed: false,
+        current: currentStep === 2,
+      },
+    ];
+  }, [currentStep]);
 
   return {
     currentStep,

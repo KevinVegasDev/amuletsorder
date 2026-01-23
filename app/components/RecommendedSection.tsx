@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "../types/product";
@@ -50,7 +50,7 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
   }
 
   return (
-    <div className={`flex flex-col max-w-[1920px] mx-auto ${className}`}>
+    <section className={`flex flex-col max-w-[1920px] mx-auto ${className}`}>
       {/* Div 1: Título y Controles */}
       <div className="flex flex-row justify-between px-[50px] py-[64px]">
         <h2 className="text-[32px] font-semibold text-black">
@@ -85,7 +85,7 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
       </div>
 
       {/* Div 2: Carrusel */}
-      <div
+      <section
         ref={scrollContainerRef}
         className="flex flex-row px-[50px] gap-[11px] overflow-x-auto scrollbar-hide"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -159,8 +159,8 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
             </div>
           );
         })}
-      </div>
-    </div>
+      </section>
+    </section>
   );
 };
 

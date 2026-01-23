@@ -13,7 +13,8 @@ import {
 const API_CONFIG: WordPressAPIConfig = {
   baseUrl:
     process.env.NEXT_PUBLIC_WORDPRESS_API_URL ||
-    "https://headlessamulets.in//wp-json/wc/v3",
+    process.env.WORDPRESS_API_URL ||
+    "https://headlessamulets.in/wp-json/wc/v3",
   consumerKey: process.env.WORDPRESS_CONSUMER_KEY || "",
   consumerSecret: process.env.WORDPRESS_CONSUMER_SECRET || "",
   version: "v3",
@@ -175,18 +176,63 @@ export async function GET(request: NextRequest) {
       hasConsumerSecret: !!API_CONFIG.consumerSecret,
     });
 
-    const response = await fetch(`${API_CONFIG.baseUrl}/products?${params}`, {
-      headers: createAuthHeaders(),
-      cache: "no-store",
-    });
+    let response: Response;
+    try {
+      // Agregar timeout para evitar que se quede colgado
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+
+      response = await fetch(`${API_CONFIG.baseUrl}/products?${params}`, {
+        headers: createAuthHeaders(),
+        cache: "no-store",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      console.error("Server API Fetch Error:", fetchError);
+      if (fetchError instanceof Error && fetchError.name === "AbortError") {
+        return NextResponse.json(
+          {
+            error: "La solicitud a WordPress tardó demasiado. Por favor, intenta nuevamente.",
+          },
+          { status: 504 } // Gateway Timeout
+        );
+      }
+      return NextResponse.json(
+        {
+          error: `Error de conexión con WordPress: ${fetchError instanceof Error ? fetchError.message : "Error desconocido"}`,
+        },
+        { status: 502 } // Bad Gateway
+      );
+    }
 
     if (!response.ok) {
       console.error("Server API Error:", response.status, response.statusText);
-      const errorText = await response.text();
-      console.error("Server API Error Body:", errorText);
+      let errorText = "";
+      try {
+        errorText = await response.text();
+        console.error("Server API Error Body:", errorText);
+      } catch {
+        console.error("Could not read error response body");
+      }
+
+      // Mensajes más específicos para errores comunes
+      let errorMessage = `Error fetching products: ${response.status} ${response.statusText}`;
+      if (response.status === 503) {
+        errorMessage = "WordPress está temporalmente no disponible. Por favor, intenta nuevamente en unos momentos.";
+      } else if (response.status === 500) {
+        errorMessage = "Error interno en WordPress. Por favor, intenta nuevamente más tarde.";
+      } else if (response.status === 401 || response.status === 403) {
+        errorMessage = "Error de autenticación con WordPress. Por favor, verifica las credenciales.";
+      } else if (response.status === 404) {
+        errorMessage = "No se encontró el endpoint en WordPress.";
+      }
+
       return NextResponse.json(
         {
-          error: `Error fetching products: ${response.status} ${response.statusText}`,
+          error: errorMessage,
+          details: errorText || undefined,
         },
         { status: response.status }
       );

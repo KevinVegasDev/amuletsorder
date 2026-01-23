@@ -1,6 +1,4 @@
-import Slider from "./components/Slider";
 import HomeProductsSection from "./components/HomeProductsSection";
-import GlassCTA from "./components/GlassCTA";
 import ResumeHome from "./components/ResumeHome";
 import { getBannersData } from "./lib/banner-helpers";
 import { loadProductsData } from "./lib/product-helpers";
@@ -11,10 +9,27 @@ import RecommendedSection from "./components/RecommendedSection";
 import { getRecommendedProductsData } from "./lib/recommended-helpers";
 import Trending from "./components/Trending";
 import { getTrendingProductsData } from "./lib/trending-helpers";
+import FeaturesSection from "./components/FeaturesSection";
+
+// Array de características con iconos y descripciones
+const featuresData = [
+  {
+    icon: "/icons/shipping.svg",
+    description: "Free shipping in +$30 orders ",
+  },
+  {
+    icon: "/icons/returns.svg",
+    description: "Secure payments",
+  },
+  {
+    icon: "/icons/payments.svg",
+    description: "Returns available within 15 days",
+  },
+];
 
 export default async function Home() {
   // Obtener y transformar los banners desde WordPress
-  const { sliderImages, heroImage } = await getBannersData();
+  const { heroImage } = await getBannersData();
 
   // Obtener y procesar productos y categorías
   const productsData = await loadProductsData({
@@ -60,8 +75,10 @@ export default async function Home() {
       {/* Sección Trending */}
       <Trending products={trendingProducts} />
 
-      
+      {/* Sección caracteristicas */}
+      <FeaturesSection features={featuresData} />
 
+      {/* Sección Resum about us */}
       <ResumeHome />
     </main>
   );

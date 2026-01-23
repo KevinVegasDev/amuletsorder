@@ -24,7 +24,7 @@ const API_CONFIG: WordPressAPIConfig = {
   baseUrl:
     process.env.NEXT_PUBLIC_WORDPRESS_API_URL ||
     process.env.WORDPRESS_API_URL ||
-    "http://localhost:8000/wp-json/wc/v3",
+    "http://localhost:3000/wp-json/wc/v3",
   consumerKey: process.env.WORDPRESS_CONSUMER_KEY || "",
   consumerSecret: process.env.WORDPRESS_CONSUMER_SECRET || "",
   version: "v3",
@@ -206,6 +206,7 @@ export async function getProducts(
     // En servidor, construir URL completa
     let baseUrl: string;
     if (isClient) {
+      // En cliente, usar window.location.origin
       baseUrl = `${window.location.origin}/api/products`;
     } else {
       // En servidor, usar la URL base del entorno o localhost:3000
@@ -215,17 +216,76 @@ export async function getProducts(
       baseUrl = `${host}/api/products`;
     }
 
-    const response = await fetch(`${baseUrl}?${params}`, {
-      cache: "no-store",
-    });
+    const url = `${baseUrl}?${params}`;
+    console.log(`[getProducts] Fetching from: ${url}`);
+
+    let response: Response;
+    try {
+      // Crear un AbortController para timeout manual
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+
+      response = await fetch(url, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      console.error("[getProducts] Fetch error:", fetchError);
+      // Si es un error de red o timeout
+      if (fetchError instanceof Error && fetchError.name === "AbortError") {
+        throw new Error("La solicitud tardó demasiado. Por favor, intenta nuevamente.");
+      }
+      throw new Error(
+        `Error de conexión: ${fetchError instanceof Error ? fetchError.message : "Error desconocido"}`
+      );
+    }
 
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ error: "Unknown error" }));
-      throw new Error(
-        errorData.error || `Error fetching products: ${response.status}`
-      );
+      // Primero verificar el código de estado para mensajes específicos
+      let errorMessage = `Error fetching products: ${response.status}`;
+      
+      // Mensajes más específicos para errores comunes basados en el código de estado
+      if (response.status === 503) {
+        errorMessage = "El servicio no está disponible temporalmente. Por favor, intenta nuevamente en unos momentos.";
+      } else if (response.status === 500) {
+        errorMessage = "Error interno del servidor. Por favor, intenta nuevamente más tarde.";
+      } else if (response.status === 404) {
+        errorMessage = "No se encontró la ruta de la API. Por favor, verifica la configuración.";
+      }
+      
+      // Intentar obtener más detalles del error (puede ser JSON o HTML)
+      try {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } else {
+          // Si es HTML u otro formato, intentar leer el texto pero no usarlo si es muy largo
+          const errorText = await response.text();
+          // Solo usar el texto si es corto (probablemente un mensaje de error)
+          if (errorText && errorText.length < 200 && !errorText.includes("<!DOCTYPE")) {
+            errorMessage = errorText;
+          }
+        }
+      } catch (parseError) {
+        // Si falla el parseo, usar el mensaje basado en el código de estado
+        console.warn("[getProducts] Could not parse error response:", parseError);
+      }
+      
+      console.error(`[getProducts] Error response:`, {
+        status: response.status,
+        statusText: response.statusText,
+        message: errorMessage,
+      });
+      
+      // Crear error con información del código de estado
+      const error = new Error(errorMessage) as Error & { statusCode?: number };
+      error.statusCode = response.status;
+      throw error;
     }
 
     return await response.json();

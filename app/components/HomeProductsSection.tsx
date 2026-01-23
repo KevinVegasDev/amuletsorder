@@ -25,9 +25,9 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
   return (
     <section className={`py-4 px-[50px] rounded-2xl ${className}`}>
       {/* Título arriba a la izquierda */}
-      <div className="p-4 max-w-[1920px] mx-auto justify-center items-center">
+      <div className="p-4 max-w-[1920px] mx-auto justify-center py-16 items-center">
         <h2 className="text-4xl font-bold text-black ">
-        Shop by category
+          Shop by category
         </h2>
       </div>
 

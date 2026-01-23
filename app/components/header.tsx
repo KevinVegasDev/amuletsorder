@@ -11,7 +11,7 @@ import WishlistDropdown from "./WishlistDropdown";
 
 const Header = () => {
   const { getCartItemCount } = useCart();
-  const { wishlist, getWishlistItemCount } = useWishlist();
+  const { getWishlistItemCount } = useWishlist();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   

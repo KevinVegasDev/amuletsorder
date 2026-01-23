@@ -62,10 +62,33 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
         setTotalPages(response.totalPages);
         setTotal(response.total);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Error al cargar productos"
-        );
-        console.error("Error loading products:", err);
+        console.error("❌ Error loading products:", err);
+        
+        // Verificar si el error tiene código de estado
+        const statusCode = (err as Error & { statusCode?: number })?.statusCode;
+        const errorMessage = err instanceof Error ? err.message : "Error al cargar productos";
+        
+        // Si el error es 503 o un error de servicio no disponible
+        const isServiceUnavailable = statusCode === 503 || 
+                                    errorMessage.includes("503") || 
+                                    errorMessage.includes("no está disponible") ||
+                                    errorMessage.includes("Service Unavailable");
+
+        if (isServiceUnavailable) {
+          // Para el market, cuando WordPress no está disponible, simplemente mostrar estado vacío
+          // NO hacer fallback a productos destacados porque el market debe mostrar TODOS los productos
+          // o los productos según los filtros del usuario, no cambiar a destacados
+          console.log("⚠️ WordPress service unavailable, showing empty state");
+          setProducts([]);
+          setCurrentPage(1);
+          setTotalPages(0);
+          setTotal(0);
+          setError(null); // No mostrar error, solo estado vacío (consistente con el home)
+          return;
+        } else {
+          // Para otros errores, mostrar el mensaje original
+          setError(errorMessage);
+        }
       } finally {
         setLoading(false);
       }

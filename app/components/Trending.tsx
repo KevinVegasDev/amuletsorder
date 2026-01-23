@@ -22,7 +22,7 @@ const Trending: React.FC<TrendingProps> = ({
   }
 
   return (
-    <div className={`max-w-[1920px] mx-auto flex flex-col ${className}`}>
+    <section className={`max-w-[1920px] mx-auto flex flex-col ${className}`}>
       {/* Div 1: Título */}
       <div className="px-[50px] py-[64px]">
         <h4 className="text-[32px] font-semibold text-black">
@@ -67,7 +67,7 @@ const Trending: React.FC<TrendingProps> = ({
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };
 

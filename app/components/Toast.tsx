@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useToast } from "../contexts/ToastContext";
 import { Toast as ToastType } from "../types/toast";
 
@@ -12,6 +12,13 @@ interface ToastItemProps {
 const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onRemove(toast.id);
+    }, 300); // Match animation duration
+  }, [onRemove, toast.id]);
 
   useEffect(() => {
     // Trigger entrance animation
@@ -25,14 +32,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onRemove }) => {
 
       return () => clearTimeout(timer);
     }
-  }, [toast.duration]);
-
-  const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onRemove(toast.id);
-    }, 300); // Match animation duration
-  };
+  }, [toast.duration, handleClose]);
 
   const getToastStyles = () => {
     const baseStyles =
