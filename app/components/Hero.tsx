@@ -60,6 +60,7 @@ const Hero: React.FC<HeroProps> = ({
           <div className="">
             <Link
               href={ctaLink}
+              prefetch={true}
               className="inline-block px-8  py-4 rounded-[12px] bg-gris text-black font-semibold hover:bg-gray-200 transition-colors duration-200 text-[20px]"
               aria-label={ctaText}
             >

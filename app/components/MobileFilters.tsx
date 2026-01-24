@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { ProductFilters as ProductFiltersType } from '../types/product';
 import ProductFilters from './ProductFilters';
-import { getProductCategories } from "../lib/wordpress-api";
 
 interface MobileFiltersProps {
   filters: ProductFiltersType;
@@ -44,11 +43,11 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
   return (
     <>
       {/* Overlay */}
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-50 lg:hidden transform transition-transform duration-300 ease-in-out">
         {/* Header */}

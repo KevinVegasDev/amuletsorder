@@ -22,10 +22,10 @@ export const ProductAttributes: React.FC<ProductAttributesProps> = ({
   isOptionAvailable,
   onAttributeChange,
 }) => {
+  void getAvailableOptions; // Prop passed by parent, used for future filtering
   return (
     <>
       {attributes.map((attribute, index) => {
-        const attributeNameLower = attribute.name.toLowerCase().trim();
         const isColor = isColorAttribute(attribute.name);
         const selectedValue = selectedAttributes[attribute.name];
 
@@ -55,13 +55,12 @@ export const ProductAttributes: React.FC<ProductAttributesProps> = ({
                         }
                       }}
                       disabled={!isAvailable}
-                      className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 ${
-                        isSelected
+                      className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 ${isSelected
                           ? "border-negro scale-110"
                           : isAvailable
-                          ? "border-gray-300 hover:border-gray-400"
-                          : "border-gray-200 opacity-40 cursor-not-allowed"
-                      }`}
+                            ? "border-gray-300 hover:border-gray-400"
+                            : "border-gray-200 opacity-40 cursor-not-allowed"
+                        }`}
                       style={{
                         backgroundColor: getColorHex(option),
                         cursor: isAvailable ? "pointer" : "not-allowed",
@@ -108,13 +107,12 @@ export const ProductAttributes: React.FC<ProductAttributesProps> = ({
                         }
                       }}
                       disabled={!isAvailable}
-                      className={`px-4 py-2 border-2 rounded transition-colors duration-200 font-medium ${
-                        isSelected
+                      className={`px-4 py-2 border-2 rounded transition-colors duration-200 font-medium ${isSelected
                           ? "bg-negro text-white border-negro"
                           : isAvailable
-                          ? "bg-white text-negro border-gray-300 hover:border-negro"
-                          : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50"
-                      }`}
+                            ? "bg-white text-negro border-gray-300 hover:border-negro"
+                            : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50"
+                        }`}
                       title={!isAvailable ? "Not available" : option}
                     >
                       {option}

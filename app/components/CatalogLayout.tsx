@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Product,
   ProductFilters as ProductFiltersType,
@@ -30,6 +31,10 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
   showFilters = true,
   className = "",
 }) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [products, setProducts] = useState<Product[]>(
     initialProducts?.products || []
   );
@@ -40,10 +45,53 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     initialProducts?.totalPages || 1
   );
   const [total, setTotal] = useState(initialProducts?.total || 0);
-  const [currentFilters, setCurrentFilters] =
-    useState<ProductFiltersType>(filters);
+
+  // Leer filtros de la URL al inicializar
+  const getFiltersFromURL = useCallback((): ProductFiltersType => {
+    const urlFilters: ProductFiltersType = {};
+
+    // Leer categoría de la URL
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      urlFilters.categories = [categoryParam];
+    }
+
+    // Leer rango de precio de la URL
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    if (minPrice || maxPrice) {
+      urlFilters.priceRange = {
+        min: minPrice ? parseInt(minPrice) : 0,
+        max: maxPrice ? parseInt(maxPrice) : 1000,
+      };
+    }
+
+    // Leer featured
+    if (searchParams.get("featured") === "true") {
+      urlFilters.featured = true;
+    }
+
+    // Leer onSale
+    if (searchParams.get("onSale") === "true") {
+      urlFilters.onSale = true;
+    }
+
+    return urlFilters;
+  }, [searchParams]);
+
+  const [currentFilters, setCurrentFilters] = useState<ProductFiltersType>(
+    Object.keys(filters).length > 0 ? filters : getFiltersFromURL()
+  );
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [productsPerPage, setProductsPerPage] = useState(12);
+
+  // Sincronizar filtros con la URL cuando cambian los searchParams
+  useEffect(() => {
+    const urlFilters = getFiltersFromURL();
+    // Siempre actualizar los filtros con los de la URL, incluso si están vacíos
+    // Esto asegura que cuando se quita un filtro de la URL, se recarguen los productos sin filtro
+    setCurrentFilters(urlFilters);
+  }, [searchParams, getFiltersFromURL]);
 
   // Función para cargar productos
   const loadProducts = useCallback(
@@ -63,16 +111,16 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
         setTotal(response.total);
       } catch (err) {
         console.error("❌ Error loading products:", err);
-        
+
         // Verificar si el error tiene código de estado
         const statusCode = (err as Error & { statusCode?: number })?.statusCode;
         const errorMessage = err instanceof Error ? err.message : "Error al cargar productos";
-        
+
         // Si el error es 503 o un error de servicio no disponible
-        const isServiceUnavailable = statusCode === 503 || 
-                                    errorMessage.includes("503") || 
-                                    errorMessage.includes("no está disponible") ||
-                                    errorMessage.includes("Service Unavailable");
+        const isServiceUnavailable = statusCode === 503 ||
+          errorMessage.includes("503") ||
+          errorMessage.includes("no está disponible") ||
+          errorMessage.includes("Service Unavailable");
 
         if (isServiceUnavailable) {
           // Para el market, cuando WordPress no está disponible, simplemente mostrar estado vacío
@@ -96,17 +144,51 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     [currentFilters, productsPerPage]
   );
 
-  // Efecto para cargar productos cuando cambian los filtros
+  // Efecto para cargar productos cuando cambian los filtros o la URL
   useEffect(() => {
-    if (!initialProducts) {
-      loadProducts(1, currentFilters, productsPerPage);
+    // Siempre recargar productos cuando cambian los filtros (incluyendo cuando se quitan)
+    // No verificar initialProducts porque queremos que se actualice cuando cambia la URL
+    loadProducts(1, currentFilters, productsPerPage);
+  }, [currentFilters, loadProducts, productsPerPage]);
+
+  // Actualizar URL con los filtros
+  const updateURL = useCallback((newFilters: ProductFiltersType) => {
+    const params = new URLSearchParams();
+
+    if (newFilters.categories && newFilters.categories.length > 0) {
+      params.set("category", newFilters.categories[0]); // Por ahora solo la primera categoría
     }
-  }, [currentFilters, initialProducts, loadProducts, productsPerPage]);
+
+    if (newFilters.priceRange) {
+      if (newFilters.priceRange.min > 0) {
+        params.set("minPrice", newFilters.priceRange.min.toString());
+      }
+      if (newFilters.priceRange.max < 1000) {
+        params.set("maxPrice", newFilters.priceRange.max.toString());
+      }
+    }
+
+    if (newFilters.featured) {
+      params.set("featured", "true");
+    }
+
+    if (newFilters.onSale) {
+      params.set("onSale", "true");
+    }
+
+    const newURL = params.toString()
+      ? `${pathname}?${params.toString()}`
+      : pathname;
+
+    router.replace(newURL, { scroll: false });
+  }, [pathname, router]);
 
   // Manejar cambios en filtros
   const handleFiltersChange = (newFilters: ProductFiltersType) => {
+    console.log("🔄 Filters changed:", newFilters);
     setCurrentFilters(newFilters);
     setCurrentPage(1);
+    updateURL(newFilters);
     if (onFiltersChange) {
       onFiltersChange(newFilters);
     }
@@ -133,6 +215,7 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     const emptyFilters: ProductFiltersType = {};
     setCurrentFilters(emptyFilters);
     setCurrentPage(1);
+    updateURL(emptyFilters);
     if (onFiltersChange) {
       onFiltersChange(emptyFilters);
     }
@@ -188,13 +271,7 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     }
 
     return (
-      <div className="flex flex-col items-center space-y-4 mt-8">
-        {/* Información de página actual */}
-        <div className="text-sm text-gray-600 text-center">
-          Página <span className="font-semibold text-negro">{currentPage}</span>{" "}
-          de <span className="font-semibold text-negro">{totalPages}</span>
-        </div>
-
+      <div className="flex flex-col items-center mt-8">
         {/* Controles de paginación */}
         <div className="flex items-center justify-center space-x-1 sm:space-x-2">
           {/* Botón primera página */}
@@ -250,11 +327,10 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
             <button
               key={page}
               onClick={() => handlePageChange(page)}
-              className={`flex items-center justify-center w-10 h-10 text-sm font-medium transition-all duration-200 ${
-                page === currentPage
+              className={`flex items-center justify-center w-10 h-10 text-sm font-medium transition-all duration-200 ${page === currentPage
                   ? "text-white bg-negro border border-negro shadow-md transform scale-105"
                   : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-negro hover:text-negro"
-              }`}
+                }`}
               title={`Página ${page}`}
             >
               {page}
@@ -458,6 +534,7 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
             />
           ) : (
             <>
+              <ResultsInfo />
               {/* Grid de productos */}
               <ProductGrid
                 products={products}
@@ -466,9 +543,8 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
                 className="mb-8"
               />
 
-              {/* Controles de paginación y ordenamiento en la parte inferior */}
-              <div className="mt-8 space-y-6">
-                <ResultsInfo />
+              {/* Controles de paginación en la parte inferior */}
+              <div className="mt-8">
                 <Pagination />
               </div>
             </>

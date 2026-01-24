@@ -10,6 +10,10 @@ import { getRecommendedProductsData } from "./lib/recommended-helpers";
 import Trending from "./components/Trending";
 import { getTrendingProductsData } from "./lib/trending-helpers";
 import FeaturesSection from "./components/FeaturesSection";
+import CountdownTimer from "./components/CountdownTimer";
+
+// Evitar prerender en build: fetches a /api usan localhost (no existe durante build)
+export const dynamic = "force-dynamic";
 
 // Array de características con iconos y descripciones
 const featuresData = [
@@ -26,6 +30,10 @@ const featuresData = [
     description: "Returns available within 15 days",
   },
 ];
+
+// Fecha objetivo para la próxima colección (configura esto según tu necesidad)
+// Formato: YYYY-MM-DDTHH:mm:ss
+const NEXT_COLLECTION_DATE = "2024-12-31T23:59:59"; // Ejemplo: Fin de año
 
 export default async function Home() {
   // Obtener y transformar los banners desde WordPress
@@ -61,6 +69,15 @@ export default async function Home() {
           ctaLink="/market"
         />
       )}
+
+      {/* Countdown Timer para próxima colección */}
+      <div className="max-w-[1920px] mx-auto px-4 md:px-8 py-8">
+        <CountdownTimer
+          targetDate={NEXT_COLLECTION_DATE}
+          title="Próxima Colección Limitada"
+          description="No te pierdas nuestro próximo lanzamiento exclusivo"
+        />
+      </div>
 
       {/* Sección de Categorías HOME */}
       <HomeProductsSection

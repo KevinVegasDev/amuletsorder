@@ -11,7 +11,7 @@ interface FeaturesSectionProps {
 
 export default function FeaturesSection({ features }: FeaturesSectionProps) {
   return (
-    <section className="flex flex-row gap-[10px] max-w-[1920px] mx-auto py-16 items-center   ">
+    <section className="flex flex-row gap-[10px] max-w-[1920px] mx-auto py-16 px-[50px] items-center   ">
       {features.map((feature, index) => (
         <div key={index} className="flex items-center bg-gris rounded-[32px] justify-center w-full text-black py-16 px-[10px] gap-[10px]">
           <div>

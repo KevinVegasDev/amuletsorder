@@ -161,6 +161,7 @@ export function getHomeCategories(
 
 /**
  * Obtener imágenes para cada categoría (primera imagen del primer producto)
+ * Mejora la calidad de la imagen removiendo dimensiones pequeñas de la URL
  */
 export function getCategoryImages(
   categories: ProductCategory[],
@@ -175,7 +176,21 @@ export function getCategoryImages(
     if (categoryProducts.length > 0) {
       const firstProduct = categoryProducts[0];
       if (firstProduct.images && firstProduct.images.length > 0) {
-        categoryImages[category.slug] = firstProduct.images[0].src;
+        let imageUrl = firstProduct.images[0].src;
+        
+        // Mejorar calidad: remover dimensiones pequeñas de la URL para obtener imagen original
+        // WordPress/WooCommerce a menudo agrega dimensiones como -150x150, -300x300, etc.
+        if (
+          imageUrl.includes("-150x150") ||
+          imageUrl.includes("-300x300") ||
+          imageUrl.includes("-600x600") ||
+          imageUrl.includes("-768x768")
+        ) {
+          // Remover el patrón de dimensiones (ej: -300x300)
+          imageUrl = imageUrl.replace(/-\d+x\d+/, "");
+        }
+        
+        categoryImages[category.slug] = imageUrl;
       }
     }
   });

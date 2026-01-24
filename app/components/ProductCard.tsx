@@ -20,7 +20,6 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   className = "",
-  onAddToCart,
   onAddToWishlist,
   showCartButtons = false,
 }) => {
@@ -36,7 +35,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
   const { showToast } = useToast();
-  
+
   // Check if product is in wishlist - O(1) lookup instead of O(n) array search
   const isLiked = isInWishlist(product.id);
 
@@ -46,32 +45,32 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleAddToWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Prevent double clicks
     const target = e.currentTarget as HTMLButtonElement;
     if (target.disabled) {
       return;
     }
-    
+
     // Temporarily disable button to prevent double clicks
     target.disabled = true;
     setTimeout(() => {
       target.disabled = false;
     }, 300);
-    
+
     // Check current state before toggle
     const wasLiked = isLiked;
-    
+
     // Toggle wishlist - add if not liked, remove if liked
     toggleWishlist(product);
-    
+
     // Show toast notification
     if (wasLiked) {
       showToast(`${product.name} removed from saved items`, "info", 2000);
     } else {
       showToast(`${product.name} added to saved items`, "success", 2000);
     }
-    
+
     // Call prop if exists (for backward compatibility)
     if (onAddToWishlist) {
       onAddToWishlist(product);
@@ -81,33 +80,33 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleAddToCartClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Prevenir múltiples ejecuciones simultáneas
     if (isProcessingRef.current || isAddingToCart) {
       return;
     }
-    
+
     // Validar stock antes de agregar
     if (!product.inStock) {
       showToast(`${product.name} is out of stock`, "error", 3000);
       return;
     }
-    
+
     isProcessingRef.current = true;
     setIsAddingToCart(true);
-    
+
     // Simular un pequeño delay para mostrar el estado de carga
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     // Usar el contexto para agregar al carrito (solo una vez)
     addToCart(product, 1);
-    
+
     // Show toast notification
     showToast(`${product.name} added to cart`, "success", 2000);
-    
+
     // NO llamar a onAddToCart prop porque ya usamos el contexto directamente
     // La prop es solo para retrocompatibilidad pero no debería duplicar la acción
-    
+
     setIsAddingToCart(false);
     isProcessingRef.current = false;
   };
@@ -115,7 +114,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleBuyNow = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Validar stock antes de agregar
     if (!product.inStock || isBuyingNow) {
       if (!product.inStock) {
@@ -123,16 +122,16 @@ const ProductCard: React.FC<ProductCardProps> = ({
       }
       return;
     }
-    
+
     setIsBuyingNow(true);
-    
+
     // Simular un pequeño delay para mostrar el estado de carga
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     // Agregar al carrito y redirigir a checkout
     addToCart(product, 1);
     showToast(`${product.name} added to cart`, "success", 2000);
-    
+
     // Redirigir a checkout después de un breve delay
     setTimeout(() => {
       window.location.href = "/checkout";
@@ -154,6 +153,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     >
       <Link
         href={`/market/product/${product.slug}`}
+        prefetch={true}
         className="h-full flex flex-col gap-2"
       >
         {/* Imagen del producto */}
@@ -172,9 +172,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 src={primaryImage.src}
                 alt={primaryImage.alt || product.name}
                 fill
-                className={`object-cover object-center transition-all duration-500 ${
-                  isHovered && secondaryImage ? "opacity-0" : "opacity-100"
-                } ${imageLoading ? "scale-110 blur-sm" : "scale-100 blur-0"}`}
+                className={`object-cover object-center transition-all duration-500 ${isHovered && secondaryImage ? "opacity-0" : "opacity-100"
+                  } ${imageLoading ? "scale-110 blur-sm" : "scale-100 blur-0"}`}
                 onLoad={() => setImageLoading(false)}
                 onError={() => setImageError(true)}
                 sizes="(min-width: 1280px) 45vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
@@ -188,9 +187,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   src={secondaryImage.src}
                   alt={secondaryImage.alt || product.name}
                   fill
-                  className={`object-cover object-center transition-all duration-500 ${
-                    isHovered ? "opacity-100" : "opacity-0"
-                  }`}
+                  className={`object-cover object-center transition-all duration-500 ${isHovered ? "opacity-100" : "opacity-0"
+                    }`}
                   sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   quality={85}
                   loading="lazy"
@@ -217,19 +215,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
           )}
 
           {/* Heart button - always visible, shows filled when liked */}
-            <button
+          <button
             type="button"
-              onClick={handleAddToWishlist}
-              onMouseEnter={() => setIsHeartHovered(true)}
-              onMouseLeave={() => setIsHeartHovered(false)}
+            onClick={handleAddToWishlist}
+            onMouseEnter={() => setIsHeartHovered(true)}
+            onMouseLeave={() => setIsHeartHovered(false)}
             className="absolute bottom-2 right-2 z-20 p-1 cursor-pointer transition-transform duration-200 hover:scale-110"
             aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
-            >
-              <HeartIcon
-                color="var(--color-negro)"
-                filled={isLiked || isHeartHovered}
-              />
-            </button>
+          >
+            <HeartIcon
+              color="var(--color-negro)"
+              filled={isLiked || isHeartHovered}
+            />
+          </button>
 
         </div>
 

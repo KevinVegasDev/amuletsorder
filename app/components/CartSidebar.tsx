@@ -56,7 +56,14 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Sidebar - Sin overlay, fondo blanco con efecto glass */}
+      {/* Overlay para cerrar haciendo click fuera */}
+      <div
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Sidebar - Fondo blanco con efecto glass */}
       <div
         className="fixed top-0 right-0 h-full w-full sm:w-[400px] z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col"
         style={{

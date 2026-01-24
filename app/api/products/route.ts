@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Aplicar filtros desde query params
-    const categories = searchParams.get("categories");
+    const categoriesParam = searchParams.get("categories");
     const tags = searchParams.get("tags");
     const featured = searchParams.get("featured");
     const onSale = searchParams.get("on_sale");
@@ -141,7 +141,41 @@ export async function GET(request: NextRequest) {
     const minPrice = searchParams.get("min_price");
     const maxPrice = searchParams.get("max_price");
 
-    if (categories) params.append("category", categories);
+    // Convertir slugs de categorías a IDs
+    if (categoriesParam) {
+      try {
+        // Obtener todas las categorías para crear un mapa slug -> ID
+        const categoriesResponse = await fetch(
+          `${API_CONFIG.baseUrl}/products/categories?per_page=100`,
+          {
+            headers: createAuthHeaders(),
+            cache: "no-store",
+          }
+        );
+
+        if (categoriesResponse.ok) {
+          const wpCategories: Array<{ id: number; slug: string }> = await categoriesResponse.json();
+          const slugToIdMap = new Map(wpCategories.map(cat => [cat.slug, cat.id]));
+          
+          // Convertir slugs a IDs
+          const categorySlugs = categoriesParam.split(",");
+          const categoryIds = categorySlugs
+            .map(slug => slugToIdMap.get(slug.trim()))
+            .filter((id): id is number => id !== undefined);
+          
+          if (categoryIds.length > 0) {
+            params.append("category", categoryIds.join(","));
+            console.log("🔄 Converted category slugs to IDs:", { slugs: categorySlugs, ids: categoryIds });
+          } else {
+            console.warn("⚠️ No matching category IDs found for slugs:", categorySlugs);
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error converting category slugs to IDs:", error);
+        // Si falla la conversión, intentar usar el parámetro tal cual (por si acaso son IDs)
+        params.append("category", categoriesParam);
+      }
+    }
     if (tags) {
       console.log("Server API: Tags parameter received:", tags);
       // Intentar primero con 'tags' (plural) y luego con 'tag' (singular) si no funciona
@@ -174,6 +208,14 @@ export async function GET(request: NextRequest) {
     console.log("Server API: Auth configured:", {
       hasConsumerKey: !!API_CONFIG.consumerKey,
       hasConsumerSecret: !!API_CONFIG.consumerSecret,
+    });
+    console.log("Server API: Filters applied:", {
+      categories: categoriesParam,
+      tags,
+      featured,
+      onSale,
+      search,
+      priceRange: minPrice && maxPrice ? `${minPrice}-${maxPrice}` : null,
     });
 
     let response: Response;

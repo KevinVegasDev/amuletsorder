@@ -59,6 +59,7 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
             {/* CTA Button */}
             <Link
               href={collection.link || "/market"}
+              prefetch={true}
               className="inline-block bg-white text-black rounded-[12px] py-[16px] px-[32px] text-[20px] font-semibold w-fit hover:bg-gray-100 transition-colors"
             >
               Shop now

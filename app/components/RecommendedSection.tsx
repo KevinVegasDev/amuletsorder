@@ -107,14 +107,17 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
               className="w-[324px] flex flex-col gap-[14px] flex-shrink-0"
             >
               {/* Div 1: Imagen */}
-              <div className="relative w-full h-[306px] overflow-hidden">
+              <div className="relative w-full h-[306px] overflow-hidden rounded-lg">
                 {primaryImage ? (
-                  <Link href={`/market/product/${product.slug}`}>
+                  <Link 
+                    href={`/market/product/${product.slug}`}
+                    className="group/image block w-full h-full"
+                  >
                     <Image
                       src={primaryImage.src}
                       alt={primaryImage.alt || product.name}
                       fill
-                      className="object-cover"
+                      className="object-cover transition-transform duration-300 group-hover/image:scale-105"
                       sizes="800px"
                     />
                   </Link>
@@ -129,7 +132,7 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
               <div className="flex flex-row justify-between min-h-[80px] pb-[30px]">
                 {/* Div 1: Title, Tag, Precio */}
                 <div className="flex flex-col ">
-                  <Link href={`/market/product/${product.slug}`}>
+                  <Link href={`/market/product/${product.slug}`} prefetch={true}>
                     <h3 className="text-[20px] font-medium text-black">
                       {product.name}
                     </h3>

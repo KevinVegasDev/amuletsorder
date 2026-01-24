@@ -3,8 +3,6 @@
  * Estos tipos corresponden a la estructura de datos de WooCommerce Orders
  */
 
-import { ShippingAddress } from "./checkout";
-
 /**
  * Item de línea de pedido de WooCommerce
  */

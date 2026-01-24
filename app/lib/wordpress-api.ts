@@ -12,7 +12,6 @@ import {
   ProductImage,
   ProductCategory,
   ProductTag,
-  WordPressCategory,
   Banner,
   WordPressBanner,
   Collection,

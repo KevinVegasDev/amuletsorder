@@ -41,14 +41,17 @@ const Trending: React.FC<TrendingProps> = ({
               className="w-full"
               style={{ maxWidth: "596px" }}
             >
-              <Link href={`/market/product/${product.slug}`}>
+              <Link 
+                href={`/market/product/${product.slug}`}
+                className="group/image block w-full h-full"
+              >
                 {primaryImage ? (
-                  <div className="relative w-full " style={{ height: "941px" }}>
+                  <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "941px" }}>
                     <Image
                       src={primaryImage.src}
                       alt={primaryImage.alt || product.name}
                       fill
-                      className="object-cover rounded-2xl"
+                      className="object-cover rounded-2xl transition-transform duration-300 group-hover/image:scale-105"
                       sizes="1500px"
                       unoptimized={true}
                       loading="lazy"
@@ -56,7 +59,7 @@ const Trending: React.FC<TrendingProps> = ({
                   </div>
                 ) : (
                   <div
-                    className="w-full bg-gray-100 flex items-center justify-center"
+                    className="w-full bg-gray-100 flex items-center justify-center rounded-2xl"
                     style={{ height: "941px" }}
                   >
                     <span className="text-gray-400">No image</span>

@@ -34,7 +34,7 @@ const Header = () => {
           <div className="flex items-center gap-8 ">
             {/* Logo */}
             <div>
-              <Link href="/">
+              <Link href="/" prefetch={true}>
                 <Image
                   src="/logotipo.svg"
                   alt="AMULETS"
@@ -47,13 +47,13 @@ const Header = () => {
 
             {/* Navegación */}
             <nav className="hidden sm:flex items-center text-[20px]  ">
-              <Link href="/" className="px-4 py-2  text-black ">
+              <Link href="/" prefetch={true} className="px-4 py-2  text-black ">
                 home
               </Link>
-              <Link href="/market" className="px-4 py-2  text-black">
+              <Link href="/market" prefetch={true} className="px-4 py-2  text-black">
                 Market
               </Link>
-              <Link href="/about-us" className="px-4 py-2  text-black">
+              <Link href="/about-us" prefetch={true} className="px-4 py-2  text-black">
                 about us
               </Link>
             </nav>
@@ -64,7 +64,10 @@ const Header = () => {
             {/* Cart icon with counter */}
             <div className=" transition-colors duration-200 hover:text-[var(--color-hovered)] relative flex items-center justify-center">
               <button
-                onClick={() => setIsCartOpen(true)}
+                onClick={() => {
+                  setIsCartOpen(true);
+                  setIsWishlistOpen(false); // Cerrar wishlist si está abierto
+                }}
                 className="relative flex items-center justify-center cursor-pointer"
                 aria-label="Open shopping cart"
               >
@@ -80,7 +83,10 @@ const Header = () => {
             {/* Wishlist icon with counter */}
             <div className=" transition-colors duration-200 hover:text-[var(--color-hovered)] relative flex items-center justify-center">
               <button
-                onClick={() => setIsWishlistOpen(true)}
+                onClick={() => {
+                  setIsWishlistOpen(true);
+                  setIsCartOpen(false); // Cerrar carrito si está abierto
+                }}
                 className="relative flex items-center cursor-pointer justify-center"
                 aria-label="View saved products"
               >

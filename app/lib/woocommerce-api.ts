@@ -13,11 +13,8 @@
  * 4. Descomenta y ajusta las funciones según tu configuración
  */
 
-import {
-  WooCommerceCreateOrder,
-  WooCommerceOrderResponse,
-  WooCommerceErrorResponse,
-} from "../types/woocommerce";
+
+import { WooCommerceOrderResponse } from "../types/woocommerce";
 import { CartItem } from "../types/cart";
 import { CheckoutFormData } from "../types/checkout";
 
@@ -37,79 +34,6 @@ const getWooCommerceConfig = () => {
     consumerSecret,
   };
 };
-
-/**
- * Crear headers de autenticación para WooCommerce API
- */
-function createWooCommerceAuthHeaders(): HeadersInit {
-  const config = getWooCommerceConfig();
-  const auth = Buffer.from(
-    `${config.consumerKey}:${config.consumerSecret}`
-  ).toString("base64");
-
-  return {
-    Authorization: `Basic ${auth}`,
-    "Content-Type": "application/json",
-  };
-}
-
-/**
- * Transformar items del carrito a formato WooCommerce
- */
-function transformCartItemsToWooCommerce(
-  cartItems: CartItem[]
-): WooCommerceCreateOrder["line_items"] {
-  return cartItems.map((item) => ({
-    product_id: item.product.id,
-    quantity: item.quantity,
-    // Si el producto tiene variación, incluir variation_id
-    // variation_id: item.product.variationId, // TODO: Agregar si usas variaciones
-  }));
-}
-
-/**
- * Transformar dirección de envío a formato WooCommerce
- */
-function transformShippingAddressToWooCommerce(
-  shippingAddress: CheckoutFormData["shippingAddress"]
-): WooCommerceCreateOrder["shipping"] {
-  return {
-    first_name: shippingAddress.firstName,
-    last_name: shippingAddress.lastName,
-    address_1: shippingAddress.address,
-    address_2: shippingAddress.apartment || "",
-    city: shippingAddress.city,
-    state: shippingAddress.state,
-    postcode: shippingAddress.zipCode,
-    country: shippingAddress.country,
-    email: shippingAddress.email,
-    phone: shippingAddress.phone,
-  };
-}
-
-/**
- * Transformar dirección de facturación a formato WooCommerce
- */
-function transformBillingAddressToWooCommerce(
-  formData: CheckoutFormData
-): WooCommerceCreateOrder["billing"] {
-  const billingAddress = formData.sameAsShipping
-    ? formData.shippingAddress
-    : formData.billingAddress || formData.shippingAddress;
-
-  return {
-    first_name: billingAddress.firstName,
-    last_name: billingAddress.lastName,
-    address_1: billingAddress.address,
-    address_2: billingAddress.apartment || "",
-    city: billingAddress.city,
-    state: billingAddress.state,
-    postcode: billingAddress.zipCode,
-    country: billingAddress.country,
-    email: billingAddress.email,
-    phone: billingAddress.phone,
-  };
-}
 
 /**
  * Crear pedido en WooCommerce
@@ -136,7 +60,8 @@ export async function createWooCommerceOrder(
     total: number;
   }
 ): Promise<WooCommerceOrderResponse> {
-  const config = getWooCommerceConfig();
+  const _config = getWooCommerceConfig();
+  void _config;
 
   // TODO: Descomentar cuando WooCommerce esté listo
   /*
@@ -162,7 +87,7 @@ export async function createWooCommerceOrder(
     };
 
     // Crear pedido en WooCommerce
-    const response = await fetch(`${config.baseUrl}/orders`, {
+    const response = await fetch(`${_config.baseUrl}/orders`, {
       method: "POST",
       headers: createWooCommerceAuthHeaders(),
       body: JSON.stringify(orderData),
@@ -231,7 +156,8 @@ export async function processStripePayment(
   orderId: number,
   paymentMethodId?: string
 ): Promise<{ client_secret: string; payment_intent_id: string }> {
-  const config = getWooCommerceConfig();
+  const _config = getWooCommerceConfig();
+  void _config;
 
   // TODO: Descomentar cuando WooCommerce Stripe Gateway esté listo
   /*
@@ -345,12 +271,13 @@ export async function confirmStripePayment(
 export async function getWooCommerceOrder(
   orderId: number
 ): Promise<WooCommerceOrderResponse> {
-  const config = getWooCommerceConfig();
+  const _config = getWooCommerceConfig();
+  void _config;
 
   // TODO: Descomentar cuando WooCommerce esté listo
   /*
   try {
-    const response = await fetch(`${config.baseUrl}/orders/${orderId}`, {
+    const response = await fetch(`${_config.baseUrl}/orders/${orderId}`, {
       method: "GET",
       headers: createWooCommerceAuthHeaders(),
     });

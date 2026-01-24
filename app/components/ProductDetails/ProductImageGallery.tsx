@@ -18,7 +18,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const selectedImageRef = useRef<HTMLButtonElement>(null);
 
-  const handleImageClick = (image: ProductImage, index: number) => {
+  const handleImageClick = (image: ProductImage) => {
     if (onImageSelect) {
       onImageSelect(image);
     }
@@ -56,13 +56,14 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   }, [selectedImage]);
 
   return (
-    <div className="flex flex-col h-full max-h-full">
+    <div className="flex flex-col h-full">
       {/* Contenedor con scroll vertical */}
       <div
         ref={scrollContainerRef}
-        className="flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-4  scrollbar-none"
+        className="flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-4 scrollbar-hide h-full"
         style={{
-          maxHeight: "100%",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
       >
         {images.map((image, index) => {
@@ -75,12 +76,11 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             <button
               key={image.id || image.src || index}
               ref={isSelected ? selectedImageRef : null}
-              onClick={() => handleImageClick(image, index)}
-              className={`relative w-36 h-36 flex-shrink-0 overflow-hidden border-2 rounded scrollbar-none transition-all duration-200 ${
-                isSelected
-                  ? "border-negro scale-105"
-                  : "border-transparent hover:border-gray-300"
-              }`}
+              onClick={() => handleImageClick(image)}
+              className={`relative w-36 h-36 flex-shrink-0 overflow-hidden border-2 rounded scrollbar-none transition-all duration-200 ${isSelected
+                ? "border-negro scale-105"
+                : "border-transparent hover:border-gray-300"
+                }`}
               aria-label={`View image ${index + 1}`}
             >
               <Image
