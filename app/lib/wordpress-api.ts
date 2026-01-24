@@ -376,99 +376,103 @@ export async function getFeaturedProducts(
   }
 }
 
-// Función para obtener productos recomendados (con etiqueta "recomendado")
+/**
+ * Obtener ID de tag WooCommerce por slug (fetch directo a WooCommerce, como CollectionSection).
+ * Evita /api y localhost, funciona desde cualquier host.
+ */
+async function fetchTagIdBySlug(slug: string): Promise<number | null> {
+  try {
+    const res = await fetch(
+      `${API_CONFIG.baseUrl}/products/tags?slug=${encodeURIComponent(slug)}&per_page=1`,
+      { headers: createAuthHeaders(), next: { revalidate: 300 } }
+    );
+    if (!res.ok) return null;
+    const data: Array<{ id: number; slug: string }> = await res.json();
+    return data[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Obtener productos directamente de WooCommerce (sin /api).
+ * Misma estrategia que getCollections: fetch a WordPress/WooCommerce externo.
+ */
+async function fetchProductsFromWooCommerce(
+  page: number,
+  perPage: number,
+  filters?: { tagId?: number; featured?: boolean }
+): Promise<ProductsResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    per_page: perPage.toString(),
+    status: "publish",
+  });
+  if (filters?.tagId) params.set("tag", filters.tagId.toString());
+  if (filters?.featured) params.set("featured", "true");
+
+  const res = await fetch(
+    `${API_CONFIG.baseUrl}/products?${params}`,
+    { headers: createAuthHeaders(), next: { revalidate: 300 } }
+  );
+  if (!res.ok) {
+    throw new Error(`WooCommerce products: ${res.status} ${res.statusText}`);
+  }
+  const wpProducts: WordPressProduct[] = await res.json();
+  const total = parseInt(res.headers.get("X-WP-Total") ?? "0") || wpProducts.length;
+  const totalPages = parseInt(res.headers.get("X-WP-TotalPages") ?? "1") || 1;
+  const products = wpProducts.map((p) => transformWordPressProduct(p));
+  return {
+    products,
+    total,
+    totalPages,
+    currentPage: page,
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+  };
+}
+
+/**
+ * Productos recomendados: fetch directo a WooCommerce (como CollectionSection).
+ * No usa /api ni localhost → funciona desde IP/dominio que no sea localhost.
+ */
 export async function getRecommendedProducts(limit: number = 10): Promise<Product[]> {
   try {
-    console.log("⭐ Fetching recommended products...");
-
-    // Intentar obtener productos con etiqueta "recomendado" usando slug
-    console.log('🔍 Trying to get products with "recomendado" tag slug...');
-    const filters: ProductFilters = {
-      tags: ["recomendado"], // Usar slug
-    };
-    const response = await getProducts(1, limit, filters);
-    console.log(
-      `📦 Recommended products found with slug: ${response.products.length}`
-    );
-
-    if (response.products.length > 0) {
-      console.log("✅ Successfully found recommended products with slug!");
-      return response.products;
+    const tagId = await fetchTagIdBySlug("recomendado");
+    if (tagId) {
+      const res = await fetchProductsFromWooCommerce(1, limit, { tagId });
+      if (res.products.length > 0) return res.products;
     }
-
-    // Si no hay productos con etiqueta "recomendado", usar productos destacados como fallback
-    console.log(
-      "⭐ No recommended products found with slug, using featured products as fallback"
-    );
-    const fallbackResponse = await getProducts(1, limit, { featured: true });
-    console.log(
-      `📦 Featured products found: ${fallbackResponse.products.length}`
-    );
-    return fallbackResponse.products;
-  } catch (error) {
-    console.error("❌ Error fetching recommended products:", error);
-    // Fallback final: obtener productos destacados
+    const fallback = await fetchProductsFromWooCommerce(1, limit, { featured: true });
+    return fallback.products;
+  } catch {
     try {
-      console.log("🔄 Attempting fallback to featured products...");
-      const fallbackResponse = await getProducts(1, limit, { featured: true });
-      console.log(
-        `📦 Fallback featured products found: ${fallbackResponse.products.length}`
-      );
-      return fallbackResponse.products;
-    } catch (fallbackError) {
-      console.error(
-        "❌ Error fetching fallback featured products:",
-        fallbackError
-      );
+      const fallback = await fetchProductsFromWooCommerce(1, limit, { featured: true });
+      return fallback.products;
+    } catch {
       return [];
     }
   }
 }
 
-// Función para obtener productos trending (con etiqueta "trending")
+/**
+ * Productos trending: fetch directo a WooCommerce (como CollectionSection).
+ * No usa /api ni localhost → funciona desde IP/dominio que no sea localhost.
+ */
 export async function getTrendingProducts(limit: number = 3): Promise<Product[]> {
   try {
-    console.log("🔥 Fetching trending products...");
-
-    // Intentar obtener productos con etiqueta "trending" usando slug
-    console.log('🔍 Trying to get products with "trending" tag slug...');
-    const filters: ProductFilters = {
-      tags: ["trending"], // Usar slug
-    };
-    const response = await getProducts(1, limit, filters);
-    console.log(
-      `📦 Trending products found with slug: ${response.products.length}`
-    );
-
-    if (response.products.length > 0) {
-      console.log("✅ Successfully found trending products with slug!");
-      return response.products;
+    const tagId = await fetchTagIdBySlug("trending");
+    if (tagId) {
+      const res = await fetchProductsFromWooCommerce(1, limit, { tagId });
+      if (res.products.length > 0) return res.products;
     }
-
-    // Si no hay productos con etiqueta "trending", usar productos destacados como fallback
-    console.log(
-      "⭐ No trending products found with slug, using featured products as fallback"
-    );
-    const fallbackResponse = await getProducts(1, limit, { featured: true });
-    console.log(
-      `📦 Featured products found: ${fallbackResponse.products.length}`
-    );
-    return fallbackResponse.products;
-  } catch (error) {
-    console.error("❌ Error fetching trending products:", error);
-    // Fallback final: obtener productos destacados
+    const fallback = await fetchProductsFromWooCommerce(1, limit, { featured: true });
+    return fallback.products;
+  } catch {
     try {
-      console.log("🔄 Attempting fallback to featured products...");
-      const fallbackResponse = await getProducts(1, limit, { featured: true });
-      console.log(
-        `📦 Fallback featured products found: ${fallbackResponse.products.length}`
-      );
-      return fallbackResponse.products;
-    } catch (fallbackError) {
-      console.error(
-        "❌ Error fetching fallback featured products:",
-        fallbackError
-      );
+      const fallback = await fetchProductsFromWooCommerce(1, limit, { featured: true });
+      return fallback.products;
+    } catch {
       return [];
     }
   }

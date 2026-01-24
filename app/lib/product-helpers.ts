@@ -1,5 +1,10 @@
 import { Product, ProductCategory } from "../types/product";
-import { getHomeProducts, getProductCategories } from "./wordpress-api";
+import {
+  getHomeProducts,
+  getProductCategories,
+  getRecommendedProducts,
+  getTrendingProducts,
+} from "./wordpress-api";
 
 /**
  * Opciones para filtrar categorías
@@ -49,6 +54,10 @@ export interface ProductsDataResult {
   categoriesWithProducts: ProductCategory[];
   homeCategories: ProductCategory[];
   categoryImages: Record<string, string>; // slug -> imageUrl
+  /** Productos recomendados (fetch directo WooCommerce, como CollectionSection) */
+  recommendedProducts: Product[];
+  /** Productos trending (fetch directo WooCommerce) */
+  trendingProducts: Product[];
 }
 
 /**
@@ -227,27 +236,42 @@ export async function loadProductsData(options: {
   } = options;
 
   try {
-    // Cargar productos y categorías usando las funciones existentes
-    const [productsResult, categoriesResult] = await Promise.allSettled([
+    // Cargar productos, categorías, recomendados y trending (recomendados/trending
+    // usan WooCommerce directo, como CollectionSection; Home usa /api)
+    const [
+      productsResult,
+      categoriesResult,
+      recommendedResult,
+      trendingResult,
+    ] = await Promise.allSettled([
       getHomeProducts(productLimit),
       getProductCategories(),
+      getRecommendedProducts(20),
+      getTrendingProducts(3),
     ]);
 
-    // Extraer resultados o usar arrays vacíos si hay error
     const products =
       productsResult.status === "fulfilled" ? productsResult.value : [];
     const allCategories =
       categoriesResult.status === "fulfilled" ? categoriesResult.value : [];
+    const recommendedProducts =
+      recommendedResult.status === "fulfilled" ? recommendedResult.value : [];
+    const trendingProducts =
+      trendingResult.status === "fulfilled" ? trendingResult.value : [];
 
-    // Log errores pero continuar
     if (productsResult.status === "rejected") {
       console.error("Error loading products:", productsResult.reason);
     }
     if (categoriesResult.status === "rejected") {
       console.error("Error loading categories:", categoriesResult.reason);
     }
+    if (recommendedResult.status === "rejected") {
+      console.error("Error loading recommended:", recommendedResult.reason);
+    }
+    if (trendingResult.status === "rejected") {
+      console.error("Error loading trending:", trendingResult.reason);
+    }
 
-    // Si no hay datos, retornar estructura vacía
     if (products.length === 0 || allCategories.length === 0) {
       return {
         products: [],
@@ -256,6 +280,8 @@ export async function loadProductsData(options: {
         categoriesWithProducts: [],
         homeCategories: [],
         categoryImages: {},
+        recommendedProducts,
+        trendingProducts,
       };
     }
 
@@ -288,10 +314,11 @@ export async function loadProductsData(options: {
       categoriesWithProducts,
       homeCategories,
       categoryImages,
+      recommendedProducts,
+      trendingProducts,
     };
   } catch (error) {
     console.error("Error in loadProductsData:", error);
-    // Retornar estructura vacía en caso de error
     return {
       products: [],
       categories: [],
@@ -299,6 +326,8 @@ export async function loadProductsData(options: {
       categoriesWithProducts: [],
       homeCategories: [],
       categoryImages: {},
+      recommendedProducts: [],
+      trendingProducts: [],
     };
   }
 }

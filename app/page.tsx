@@ -6,9 +6,7 @@ import Hero from "./components/Hero";
 import CollectionSection from "./components/CollectionSection";
 import { getCollectionsData } from "./lib/collection-helpers";
 import RecommendedSection from "./components/RecommendedSection";
-import { getRecommendedProductsData } from "./lib/recommended-helpers";
 import Trending from "./components/Trending";
-import { getTrendingProductsData } from "./lib/trending-helpers";
 import FeaturesSection from "./components/FeaturesSection";
 import CountdownTimer from "./components/CountdownTimer";
 
@@ -48,14 +46,8 @@ export default async function Home() {
     },
   });
 
-  // Obtener colecciones
+  // Obtener colecciones (fetch directo WordPress, como loadProductsData)
   const collections = await getCollectionsData();
-
-  // Obtener productos recomendados
-  const recommendedProducts = await getRecommendedProductsData();
-
-  // Obtener productos trending
-  const trendingProducts = await getTrendingProductsData();
 
   return (
     <main className="">
@@ -86,11 +78,11 @@ export default async function Home() {
       />
       <CollectionSection collections={collections} />
 
-      {/* Sección de Productos Recomendados */}
-      <RecommendedSection products={recommendedProducts} />
+      {/* Sección de Productos Recomendados (desde loadProductsData, fetch directo WooCommerce) */}
+      <RecommendedSection products={productsData.recommendedProducts} />
 
-      {/* Sección Trending */}
-      <Trending products={trendingProducts} />
+      {/* Sección Trending (desde loadProductsData, fetch directo WooCommerce) */}
+      <Trending products={productsData.trendingProducts} />
 
       {/* Sección caracteristicas */}
       <FeaturesSection features={featuresData} />
