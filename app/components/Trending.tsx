@@ -41,7 +41,7 @@ const Trending: React.FC<TrendingProps> = ({
               className="w-full"
               style={{ maxWidth: "596px" }}
             >
-              <Link 
+              <Link
                 href={`/market/product/${product.slug}`}
                 className="group/image block w-full h-full"
               >
@@ -51,7 +51,7 @@ const Trending: React.FC<TrendingProps> = ({
                       src={primaryImage.src}
                       alt={primaryImage.alt || product.name}
                       fill
-                      className="object-cover rounded-2xl transition-transform duration-300 group-hover/image:scale-105"
+                      className="object-cover rounded-2xl transition-transform duration-300 "
                       sizes="1500px"
                       unoptimized={true}
                       loading="lazy"

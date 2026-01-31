@@ -12,6 +12,8 @@ interface CheckoutSummaryProps {
   shipping: number;
   tax: number;
   total: number;
+  /** Muestra que el envío está calculado por Printful (mismo que WooCommerce) */
+  shippingFromPrintful?: boolean;
 }
 
 /**
@@ -23,6 +25,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   shipping,
   tax,
   total,
+  shippingFromPrintful = false,
 }) => {
   const { cart } = useCart();
 
@@ -90,7 +93,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
           ))}
         </div>
 
-        {/* Método de envío */}
+        {/* Método de envío (precio = cálculo Printful cuando aplica, mismo que WooCommerce) */}
         <div className="border-t border-gray-200 pt-4 mb-4">
           <div className="flex justify-between items-start mb-2">
             <span className="text-sm text-gray-600">Shipping</span>
@@ -101,6 +104,11 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
               <div className="text-xs text-gray-500 mt-1">
                 {selectedShippingMethod.name}
               </div>
+              {shippingFromPrintful && (
+                <div className="text-xs text-gray-500 mt-0.5">
+                  Calculated by Printful
+                </div>
+              )}
             </div>
           </div>
         </div>

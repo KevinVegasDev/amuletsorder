@@ -63,13 +63,7 @@ export default async function Home() {
       )}
 
       {/* Countdown Timer para próxima colección */}
-      <div className="max-w-[1920px] mx-auto px-4 md:px-8 py-8">
-        <CountdownTimer
-          targetDate={NEXT_COLLECTION_DATE}
-          title="Próxima Colección Limitada"
-          description="No te pierdas nuestro próximo lanzamiento exclusivo"
-        />
-      </div>
+
 
       {/* Sección de Categorías HOME */}
       <HomeProductsSection

@@ -32,7 +32,7 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
       </div>
 
       {/* Flex row con las cards - máximo 7 */}
-      <div className="flex flex-row gap-4 mx-auto max-w-[1920px] justify-center items-center">
+      <div className="flex flex-row gap-4 mx-auto max-w-[1920px] ">
         {homeCategories.map((category) => (
           <HomeCategoryCard
             key={category.id}

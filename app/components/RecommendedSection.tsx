@@ -107,9 +107,9 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
               className="w-[324px] flex flex-col gap-[14px] flex-shrink-0"
             >
               {/* Div 1: Imagen */}
-              <div className="relative w-full h-[306px] overflow-hidden rounded-lg">
+              <div className="relative w-full h-[306px] overflow-hidden">
                 {primaryImage ? (
-                  <Link 
+                  <Link
                     href={`/market/product/${product.slug}`}
                     className="group/image block w-full h-full"
                   >
@@ -117,7 +117,7 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
                       src={primaryImage.src}
                       alt={primaryImage.alt || product.name}
                       fill
-                      className="object-cover transition-transform duration-300 group-hover/image:scale-105"
+                      className="object-cover transition-transform duration-300 "
                       sizes="800px"
                     />
                   </Link>

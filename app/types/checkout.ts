@@ -35,7 +35,8 @@ export interface CheckoutStep {
 export interface CheckoutFormData {
   shippingAddress: ShippingAddress;
   paymentMethod: PaymentMethod;
-  shippingMethod: "standard" | "express" | "overnight";
+  /** Id del método de envío (estático: "standard" | "express" | "overnight", o id de Printful) */
+  shippingMethod: string;
   sameAsShipping?: boolean;
   billingAddress?: ShippingAddress;
 }
@@ -47,7 +48,8 @@ export interface CheckoutValidationErrors {
 }
 
 export interface ShippingMethod {
-  id: "standard" | "express" | "overnight";
+  /** Id estático ("standard" | "express" | "overnight") o id de tarifa Printful */
+  id: string;
   name: string;
   description: string;
   price: number;

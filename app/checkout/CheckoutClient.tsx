@@ -1,20 +1,34 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
 import { useCart } from "../contexts/CartContext";
+import { useToast } from "../contexts/ToastContext";
 import { useCheckout } from "../market/hooks/useCheckout";
 import { CheckoutHeader } from "../components/Checkout/CheckoutHeader";
 import { CheckoutSummary } from "../components/Checkout/CheckoutSummary";
-import { ShippingForm } from "../components/Checkout/ShippingForm";
-import { PaymentForm } from "../components/Checkout/PaymentForm";
+import { ShippingFormStripe } from "../components/Checkout/ShippingFormStripe";
+import { StripePaymentForm } from "../components/Checkout/StripePaymentForm";
+
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
+);
 
 /**
- * Cliente del checkout - maneja toda la lógica y renderiza los componentes
+ * Cliente del checkout - maneja toda la lógica y renderiza los componentes.
+ * Checkout 100% headless: pago con Stripe Elements, sin redirección a WooCommerce.
  */
 export const CheckoutClient: React.FC = () => {
   const router = useRouter();
   const { cart } = useCart();
+  const { showToast } = useToast();
+  const [paymentSession, setPaymentSession] = useState<{
+    orderId: number;
+    orderKey: string;
+    clientSecret: string;
+  } | null>(null);
 
   const {
     currentStep,
@@ -23,21 +37,19 @@ export const CheckoutClient: React.FC = () => {
     isProcessing,
     shippingMethods,
     selectedShippingMethod,
+    shippingFromPrintful,
     updateShippingAddress,
-    updatePaymentMethod,
     setShippingMethod,
     handleNextStep,
     handlePreviousStep,
+    handleSubmit,
+    validateCurrentStep,
     getSteps,
     calculateSubtotal,
     calculateShipping,
     calculateTax,
     calculateTotal,
-  } = useCheckout({
-    onSuccess: () => {
-      router.push("/checkout/success");
-    },
-  });
+  } = useCheckout();
 
   // Si el carrito está vacío, redirigir al mercado
   if (cart.items.length === 0) {
@@ -74,29 +86,30 @@ export const CheckoutClient: React.FC = () => {
           {/* Formulario (izquierda - 2/3) */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border border-gray-200 p-6 sm:p-8">
-              {/* Paso 0: Shipping */}
+              {/* Paso 0: Shipping (Stripe Address Element + email/phone + métodos estáticos) */}
               {currentStep === 0 && (
-                <ShippingForm
-                  shippingAddress={formData.shippingAddress}
-                  shippingMethods={shippingMethods}
-                  selectedShippingMethod={selectedShippingMethod}
-                  errors={errors}
-                  onShippingAddressChange={updateShippingAddress}
-                  onShippingMethodChange={setShippingMethod}
-                />
+                <Elements
+                  stripe={stripePromise}
+                  options={{
+                    appearance: {
+                      theme: "stripe",
+                      variables: { colorPrimary: "#0a0a0a" },
+                    },
+                  }}
+                >
+                  <ShippingFormStripe
+                    shippingAddress={formData.shippingAddress}
+                    shippingMethods={shippingMethods}
+                    selectedShippingMethod={selectedShippingMethod}
+                    errors={errors}
+                    onShippingAddressChange={updateShippingAddress}
+                    onShippingMethodChange={setShippingMethod}
+                  />
+                </Elements>
               )}
 
-              {/* Paso 1: Payment */}
-              {currentStep === 1 && (
-                <PaymentForm
-                  paymentMethod={formData.paymentMethod}
-                  errors={errors}
-                  onPaymentMethodChange={updatePaymentMethod}
-                />
-              )}
-
-              {/* Paso 2: Review */}
-              {currentStep === 2 && (
+              {/* Paso 1: Review o formulario de pago Stripe */}
+              {currentStep === 1 && !paymentSession && (
                 <div className="space-y-6">
                   <h2 className="text-xl font-bold text-negro">Order Review</h2>
 
@@ -125,35 +138,6 @@ export const CheckoutClient: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Resumen de pago */}
-                  <div className="border-t border-gray-200 pt-6">
-                    <h3 className="text-lg font-semibold text-negro mb-4">
-                      Payment Method
-                    </h3>
-                    <div className="text-sm text-gray-700">
-                      {formData.paymentMethod.type === "card" ? (
-                        <>
-                          <p className="font-medium">
-                            {formData.paymentMethod.cardHolderName}
-                          </p>
-                          <p>
-                            **** **** ****{" "}
-                            {formData.paymentMethod.cardNumber?.slice(-4) ||
-                              "0000"}
-                          </p>
-                          <p>
-                            {formData.paymentMethod.expiryMonth}/
-                            {formData.paymentMethod.expiryYear}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="font-medium">
-                          {formData.paymentMethod.type.toUpperCase()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Método de envío */}
                   <div className="border-t border-gray-200 pt-6">
                     <h3 className="text-lg font-semibold text-negro mb-4">
@@ -167,56 +151,134 @@ export const CheckoutClient: React.FC = () => {
                 </div>
               )}
 
-              {/* Botones de navegación */}
-              <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
-                {currentStep > 0 ? (
-                  <button
-                    onClick={handlePreviousStep}
-                    disabled={isProcessing}
-                    className="px-6 py-3 bg-white text-negro border-2 border-gray-300 font-medium rounded hover:bg-gray-50 hover:border-negro transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              {/* Formulario de pago Stripe (mismo paso Review, sin salir de la página) */}
+              {currentStep === 1 && paymentSession && (
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold text-negro">Payment</h2>
+                  <p className="text-sm text-gray-600">
+                    Complete your order securely with your card.
+                  </p>
+                  <Elements
+                    stripe={stripePromise}
+                    options={{
+                      clientSecret: paymentSession.clientSecret,
+                      appearance: {
+                        theme: "stripe",
+                        variables: { colorPrimary: "#0a0a0a" },
+                      },
+                    }}
                   >
-                    Previous
+                    <StripePaymentForm
+                      orderId={paymentSession.orderId}
+                      orderKey={paymentSession.orderKey}
+                      onSuccess={(orderId, orderKey) => {
+                        router.push(
+                          `/checkout/success?order_id=${orderId}&key=${encodeURIComponent(orderKey)}`
+                        );
+                      }}
+                      onError={(message) => showToast(message, "error", 5000)}
+                    />
+                  </Elements>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentSession(null)}
+                    className="text-sm text-gray-600 hover:text-negro underline"
+                  >
+                    ← Back to review
                   </button>
-                ) : (
-                  <div />
-                )}
+                </div>
+              )}
 
-                <button
-                  onClick={handleNextStep}
-                  disabled={isProcessing}
-                  className="px-8 py-3 bg-negro text-white font-medium rounded hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {isProcessing ? (
-                    <>
-                      <svg
-                        className="animate-spin h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      <span>Processing...</span>
-                    </>
-                  ) : currentStep === 2 ? (
-                    "Place Order"
+              {/* Botones de navegación (ocultos cuando se muestra el formulario Stripe) */}
+              {!(currentStep === 1 && paymentSession) && (
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+                  {currentStep > 0 ? (
+                    <button
+                      onClick={handlePreviousStep}
+                      disabled={isProcessing}
+                      className="px-6 py-3 bg-white text-negro border-2 border-gray-300 font-medium rounded hover:bg-gray-50 hover:border-negro transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
                   ) : (
-                    "Continue"
+                    <div />
                   )}
-                </button>
-              </div>
+
+                  {currentStep === 1 && !paymentSession ? (
+                    <button
+                      onClick={async () => {
+                        if (!validateCurrentStep()) return;
+                        const result = await handleSubmit();
+                        if (result) setPaymentSession(result);
+                      }}
+                      disabled={isProcessing}
+                      className="px-8 py-3 bg-negro text-white font-medium rounded hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        "Place order"
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleNextStep}
+                      disabled={isProcessing}
+                      className="px-8 py-3 bg-negro text-white font-medium rounded hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        "Continue"
+                      )}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -228,6 +290,7 @@ export const CheckoutClient: React.FC = () => {
               shipping={calculateShipping()}
               tax={calculateTax()}
               total={calculateTotal()}
+              shippingFromPrintful={shippingFromPrintful}
             />
           </div>
         </div>

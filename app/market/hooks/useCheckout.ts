@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useCart } from "../../contexts/CartContext";
 import { useToast } from "../../contexts/ToastContext";
 import {
@@ -24,6 +24,8 @@ interface UseCheckoutReturn {
   isProcessing: boolean;
   shippingMethods: ShippingMethod[];
   selectedShippingMethod: ShippingMethod;
+  /** true cuando las tarifas de envío vienen de la API de Printful (mismo cálculo que WooCommerce/Printful) */
+  shippingFromPrintful: boolean;
 
   // Métodos
   setCurrentStep: (step: number) => void;
@@ -35,7 +37,8 @@ interface UseCheckoutReturn {
   validateCurrentStep: () => boolean;
   handleNextStep: () => void;
   handlePreviousStep: () => void;
-  handleSubmit: () => Promise<void>;
+  /** Crea pedido en WC y PaymentIntent en Stripe; devuelve { orderId, orderKey, clientSecret } para mostrar Stripe Elements. Sin redirección. */
+  handleSubmit: () => Promise<{ orderId: number; orderKey: string; clientSecret: string } | null>;
   getSteps: () => CheckoutStep[];
   calculateSubtotal: () => number;
   calculateShipping: () => number;
@@ -99,7 +102,10 @@ const DEFAULT_FORM_DATA: CheckoutFormData = {
 export const useCheckout = ({
   onSuccess,
 }: UseCheckoutProps = {}): UseCheckoutReturn => {
-  const [currentStep, setCurrentStep] = useState(0); // 0: Shipping, 1: Payment, 2: Review
+  // Checkout con pago en WooCommerce:
+  // 0: Shipping (datos de envío)
+  // 1: Review (revisión y redirección a Woo para pagar)
+  const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<CheckoutFormData>(DEFAULT_FORM_DATA);
   const [errors, setErrors] = useState<CheckoutValidationErrors>({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -107,11 +113,62 @@ export const useCheckout = ({
   const { cart, clearCart } = useCart();
   const { showToast } = useToast();
 
-  // Métodos de envío disponibles
-  const shippingMethods = DEFAULT_SHIPPING_METHODS;
+  // Métodos de envío: estáticos por defecto, o dinámicos desde Printful cuando hay dirección
+  const [shippingMethodsState, setShippingMethodsState] = useState<ShippingMethod[]>(DEFAULT_SHIPPING_METHODS);
+  const [shippingMethodsLoading, setShippingMethodsLoading] = useState(false);
+  const [shippingFromPrintful, setShippingFromPrintful] = useState(false);
+
+  const shippingMethods = shippingMethodsState;
   const selectedShippingMethod =
     shippingMethods.find((m) => m.id === formData.shippingMethod) ||
     shippingMethods[0];
+
+  // Obtener tarifas de envío (Printful o estáticas) cuando la dirección está lista
+  useEffect(() => {
+    const addr = formData.shippingAddress;
+    if (!addr.country || (!addr.zipCode && !addr.city)) return;
+
+    const cartItems = cart.items.map((item) => ({
+      productId: item.product.id,
+      quantity: item.quantity,
+      printfulVariantId: item.product.printfulVariants?.[0]?.variant_id,
+      printfulSyncProductId: item.product.printfulSyncProductId,
+    }));
+
+    setShippingMethodsLoading(true);
+    fetch("/api/shipping/rates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: addr, cartItems }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const rates = data.rates ?? DEFAULT_SHIPPING_METHODS;
+        setShippingMethodsState(Array.isArray(rates) ? rates : DEFAULT_SHIPPING_METHODS);
+        setShippingFromPrintful(Boolean(data.fromPrintful));
+        setFormData((prev) => {
+          const methods = Array.isArray(rates) ? rates : DEFAULT_SHIPPING_METHODS;
+          const currentExists = methods.some((m: ShippingMethod) => m.id === prev.shippingMethod);
+          if (!currentExists && methods.length > 0) {
+            return { ...prev, shippingMethod: methods[0].id };
+          }
+          return prev;
+        });
+      })
+      .catch(() => {
+        setShippingMethodsState(DEFAULT_SHIPPING_METHODS);
+        setShippingFromPrintful(false);
+      })
+      .finally(() => setShippingMethodsLoading(false));
+  }, [
+    formData.shippingAddress.country,
+    formData.shippingAddress.zipCode,
+    formData.shippingAddress.city,
+    formData.shippingAddress.state,
+    formData.shippingAddress.address,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    cart.items.map((i) => `${i.product.id}-${i.quantity}`).join(","),
+  ]);
 
   /**
    * Validar email
@@ -169,7 +226,10 @@ export const useCheckout = ({
         }
         if (!shippingAddress.zipCode.trim()) {
           newErrors.shippingAddress!.zipCode = "ZIP code is required";
-        } else if (!/^\d{5}(-\d{4})?$/.test(shippingAddress.zipCode)) {
+        } else if (
+          shippingAddress.country === "US" &&
+          !/^\d{5}(-\d{4})?$/.test(shippingAddress.zipCode)
+        ) {
           newErrors.shippingAddress!.zipCode = "Please enter a valid ZIP code";
         }
         if (!shippingAddress.country.trim()) {
@@ -179,40 +239,7 @@ export const useCheckout = ({
         setErrors(newErrors);
         return Object.keys(newErrors.shippingAddress || {}).length === 0;
       }
-      case 1: {
-        // Payment - validar método de pago
-        const newErrors: CheckoutValidationErrors = {
-          paymentMethod: {},
-        };
-
-        const { paymentMethod } = formData;
-
-        if (paymentMethod.type === "card") {
-          if (!paymentMethod.cardNumber) {
-            newErrors.paymentMethod!.cardNumber = "Card number is required";
-          } else {
-            const cardNumber = paymentMethod.cardNumber.replace(/\s/g, "");
-            if (cardNumber.length < 13 || cardNumber.length > 19) {
-              newErrors.paymentMethod!.cardNumber = "Invalid card number";
-            }
-          }
-          if (!paymentMethod.cardHolderName) {
-            newErrors.paymentMethod!.cardHolderName = "Cardholder name is required";
-          }
-          if (!paymentMethod.expiryMonth || !paymentMethod.expiryYear) {
-            newErrors.paymentMethod!.expiryMonth = "Expiry date is required";
-          }
-          if (!paymentMethod.cvv) {
-            newErrors.paymentMethod!.cvv = "CVV is required";
-          } else if (!/^\d{3,4}$/.test(paymentMethod.cvv)) {
-            newErrors.paymentMethod!.cvv = "Invalid CVV";
-          }
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors.paymentMethod || {}).length === 0;
-      }
-      case 2: // Review
+      case 1: // Review
         return true;
       default:
         return false;
@@ -348,50 +375,29 @@ export const useCheckout = ({
   }, [calculateSubtotal, calculateShipping, calculateTax]);
 
   /**
-   * Procesar el pedido
-   * 
-   * TODO: Conectar con WooCommerce + Stripe cuando esté listo
-   * 
-   * Flujo actual (simulado):
-   * 1. Validar formulario
-   * 2. Simular creación de pedido
-   * 3. Limpiar carrito
-   * 4. Redirigir a éxito
-   * 
-   * Flujo con WooCommerce + Stripe (cuando esté conectado):
-   * 1. Validar formulario
-   * 2. Crear pedido en WooCommerce (createWooCommerceOrder)
-   * 3. Si hay payment_url, redirigir a Stripe
-   * 4. O procesar pago directamente con Stripe (processStripePayment)
-   * 5. Confirmar pago (confirmStripePayment)
-   * 6. Limpiar carrito solo si el pago es exitoso
-   * 7. Redirigir a página de éxito con order_id
+   * Crear pedido en WooCommerce (pending) y PaymentIntent en Stripe.
+   * Devuelve { orderId, orderKey, clientSecret } para que el front muestre Stripe Elements y confirme el pago.
+   * Sin redirección a WooCommerce/Stripe hosted.
    */
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(async (): Promise<{
+    orderId: number;
+    orderKey: string;
+    clientSecret: string;
+  } | null> => {
     if (!validateCurrentStep()) {
-      return;
+      return null;
     }
 
     if (cart.items.length === 0) {
       showToast("Your cart is empty", "error", 3000);
-      return;
+      return null;
     }
 
     setIsProcessing(true);
 
     try {
-      // ============================================
-      // TODO: DESCOMENTAR Y CONECTAR CON WOOCOMMERCE
-      // ============================================
-      /*
-      // Importar funciones de WooCommerce API
-      import {
-        createWooCommerceOrder,
-        processStripePayment,
-        confirmStripePayment,
-      } from "../../lib/woocommerce-api";
+      const { createWooCommerceOrder } = await import("../../lib/woocommerce-api");
 
-      // Calcular totales
       const totals = {
         subtotal: calculateSubtotal(),
         shipping: calculateShipping(),
@@ -399,88 +405,39 @@ export const useCheckout = ({
         total: calculateTotal(),
       };
 
-      // 1. Crear pedido en WooCommerce
       const order = await createWooCommerceOrder(
         formData,
         cart.items,
-        totals
+        totals,
+        selectedShippingMethod.name
       );
 
-      // 2. Si WooCommerce devuelve payment_url (Stripe Checkout), redirigir
-      if (order.payment_url) {
-        // Redirigir a Stripe para completar el pago
-        window.location.href = order.payment_url;
-        return;
-      }
-
-      // 3. Si no hay payment_url, procesar pago directamente con Stripe
-      // (Esto requiere que tengas Stripe Elements configurado en el frontend)
-      if (formData.paymentMethod.type === "card") {
-        // Crear Payment Intent
-        const paymentData = await processStripePayment(order.id);
-
-        // Confirmar pago con Stripe
-        // NOTA: Esto requiere tener Stripe.js cargado en el frontend
-        // y un payment_method_id creado con Stripe Elements
-        const confirmation = await confirmStripePayment(
-          paymentData.client_secret,
-          formData.paymentMethod.paymentMethodId || "" // TODO: Obtener de Stripe Elements
-        );
-
-        if (!confirmation.success) {
-          throw new Error("Payment failed");
-        }
-      }
-
-      // 4. Si el pago es exitoso, limpiar carrito
-      clearCart();
-
-      // 5. Mostrar mensaje de éxito
-      showToast("Order placed successfully!", "success", 3000);
-
-      // 6. Redirigir a página de confirmación con order_id
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        window.location.href = `/checkout/success?order_id=${order.id}`;
-      }
-      */
-
-      // ============================================
-      // CÓDIGO TEMPORAL (SIMULACIÓN) - ELIMINAR CUANDO CONECTES
-      // ============================================
-      // Simular procesamiento del pedido
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Log para desarrollo
-      console.log("⚠️ Order submitted (simulated):", {
-        formData,
-        cart: cart.items,
-        totals: {
-          subtotal: calculateSubtotal(),
-          shipping: calculateShipping(),
-          tax: calculateTax(),
-          total: calculateTotal(),
-        },
+      const res = await fetch("/api/checkout/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          amount: totals.total,
+        }),
       });
 
-      // Limpiar carrito
-      clearCart();
-
-      // Mostrar mensaje de éxito
-      showToast("Order placed successfully!", "success", 3000);
-
-      // Llamar callback de éxito
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        // Redirigir a página de confirmación
-        window.location.href = "/checkout/success";
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Error creating payment intent");
       }
-      // ============================================
-    } catch (error) {
-      console.error("Error processing order:", error);
-      showToast("Failed to process order. Please try again.", "error", 3000);
+
+      const { clientSecret } = await res.json();
+      if (!clientSecret) throw new Error("Missing client secret");
+
+      return { orderId: order.id, orderKey: order.order_key, clientSecret };
+    } catch (error: any) {
+      console.error("Error preparing payment:", error);
+      showToast(
+        error.message || "Failed to prepare payment. Please try again.",
+        "error",
+        5000
+      );
+      return null;
     } finally {
       setIsProcessing(false);
     }
@@ -492,23 +449,17 @@ export const useCheckout = ({
     calculateShipping,
     calculateTax,
     calculateTotal,
-    clearCart,
     showToast,
-    onSuccess,
   ]);
 
   /**
-   * Ir al siguiente paso
+   * Ir al siguiente paso (solo avanza de Shipping a Review; el pago se dispara desde el componente con handleSubmit).
    */
   const handleNextStep = useCallback(() => {
-    if (validateCurrentStep()) {
-      if (currentStep < 2) {
-        setCurrentStep(currentStep + 1);
-      } else {
-        handleSubmit();
-      }
+    if (validateCurrentStep() && currentStep < 1) {
+      setCurrentStep(currentStep + 1);
     }
-  }, [currentStep, validateCurrentStep, handleSubmit]);
+  }, [currentStep, validateCurrentStep]);
 
   /**
    * Volver al paso anterior
@@ -531,16 +482,10 @@ export const useCheckout = ({
         current: currentStep === 0,
       },
       {
-        id: "payment",
-        label: "Payment",
-        completed: currentStep > 1,
-        current: currentStep === 1,
-      },
-      {
         id: "review",
         label: "Review",
         completed: false,
-        current: currentStep === 2,
+        current: currentStep === 1,
       },
     ];
   }, [currentStep]);
@@ -552,6 +497,7 @@ export const useCheckout = ({
     isProcessing,
     shippingMethods,
     selectedShippingMethod,
+    shippingFromPrintful,
     setCurrentStep,
     updateShippingAddress,
     updatePaymentMethod,

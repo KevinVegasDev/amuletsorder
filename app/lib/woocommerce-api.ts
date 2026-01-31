@@ -58,85 +58,48 @@ export async function createWooCommerceOrder(
     shipping: number;
     tax: number;
     total: number;
-  }
+  },
+  /** Nombre del método de envío para WooCommerce (p. ej. desde Printful) */
+  shippingMethodName?: string
 ): Promise<WooCommerceOrderResponse> {
-  const _config = getWooCommerceConfig();
-  void _config;
-
-  // TODO: Descomentar cuando WooCommerce esté listo
-  /*
   try {
-    // Preparar datos del pedido
-    const orderData: WooCommerceCreateOrder = {
-      payment_method: formData.paymentMethod.type === "card" ? "stripe" : "paypal",
-      payment_method_title:
-        formData.paymentMethod.type === "card"
-          ? "Credit Card (Stripe)"
-          : "PayPal",
-      set_paid: false, // No marcar como pagado hasta que Stripe confirme
-      billing: transformBillingAddressToWooCommerce(formData),
-      shipping: transformShippingAddressToWooCommerce(formData.shippingAddress),
-      line_items: transformCartItemsToWooCommerce(cartItems),
-      shipping_lines: [
-        {
-          method_title: "Standard Shipping", // TODO: Usar el método seleccionado
-          method_id: "flat_rate",
-          total: totals.shipping.toFixed(2),
-        },
-      ],
-    };
-
-    // Crear pedido en WooCommerce
-    const response = await fetch(`${_config.baseUrl}/orders`, {
+    const response = await fetch("/api/checkout/create-order", {
       method: "POST",
-      headers: createWooCommerceAuthHeaders(),
-      body: JSON.stringify(orderData),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cartItems,
+        formData,
+        totals,
+        shippingMethodName,
+      }),
     });
 
     if (!response.ok) {
-      const error: WooCommerceErrorResponse = await response.json();
-      throw new Error(error.message || "Error creating order");
+      const error = await response.json();
+      throw new Error(error.error || "Error creating order");
     }
 
-    const order: WooCommerceOrderResponse = await response.json();
-
-    // Si WooCommerce Stripe Gateway está configurado, puede devolver payment_url
-    // Esta URL redirige a Stripe para completar el pago
-    if (order.payment_url) {
-      return order;
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || "Failed to create order");
     }
 
-    // Si no hay payment_url, el pago se procesa automáticamente
-    // o necesitas llamar a processStripePayment() después
-    return order;
+    return {
+      id: data.order_id,
+      order_key: data.order_key,
+      status: data.status || "pending",
+      currency: "USD",
+      date_created: new Date().toISOString(),
+      total: totals.total.toFixed(2),
+      payment_url: data.payment_url || null,
+    };
   } catch (error) {
     console.error("Error creating WooCommerce order:", error);
     throw error;
   }
-  */
-
-  // TEMPORAL: Simulación para desarrollo
-  console.log("⚠️ WooCommerce integration not yet connected");
-  console.log("Order data:", {
-    formData,
-    cartItems,
-    totals,
-  });
-
-  // Simular respuesta
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id: Math.floor(Math.random() * 10000),
-        order_key: `order_${Date.now()}`,
-        status: "pending",
-        currency: "USD",
-        date_created: new Date().toISOString(),
-        total: totals.total.toFixed(2),
-        // payment_url: "https://checkout.stripe.com/...", // URL de Stripe cuando esté conectado
-      });
-    }, 1000);
-  });
 }
 
 /**

@@ -397,5 +397,5 @@ export type ProductsToResponse = (
   products: Product[],
   total: number,
   page: number,
-  perPage: number
+  perPage: number,
 ) => ProductsResponse;
