@@ -30,6 +30,16 @@ const API_CONFIG: WordPressAPIConfig = {
   version: "v3",
 };
 
+/** Base URL leída en runtime (evita env inlined en build en Vercel). Usar en servidor para home/categorías. */
+function getWordPressBaseUrl(): string {
+  const url =
+    process.env.NEXT_PUBLIC_WORDPRESS_API_URL ||
+    process.env.WORDPRESS_API_URL ||
+    "";
+  if (url) return url.replace(/([^:])\/\/+/g, "$1/").replace(/\/+$/, "");
+  return "http://localhost:3000/wp-json/wc/v3";
+}
+
 // Función para crear headers de autenticación
 function createAuthHeaders(): HeadersInit {
   const auth = Buffer.from(
@@ -399,8 +409,10 @@ export async function getFeaturedProducts(
  */
 async function fetchTagIdBySlug(slug: string): Promise<number | null> {
   try {
+    const baseUrl =
+      typeof window === "undefined" ? getWordPressBaseUrl() : API_CONFIG.baseUrl;
     const res = await fetch(
-      `${API_CONFIG.baseUrl}/products/tags?slug=${encodeURIComponent(slug)}&per_page=1`,
+      `${baseUrl}/products/tags?slug=${encodeURIComponent(slug)}&per_page=1`,
       { headers: createAuthHeaders(), next: { revalidate: 300 } },
     );
     if (!res.ok) return null;
@@ -428,7 +440,9 @@ async function fetchProductsFromWooCommerce(
   if (filters?.tagId) params.set("tag", filters.tagId.toString());
   if (filters?.featured) params.set("featured", "true");
 
-  const res = await fetch(`${API_CONFIG.baseUrl}/products?${params}`, {
+  const baseUrl =
+    typeof window === "undefined" ? getWordPressBaseUrl() : API_CONFIG.baseUrl;
+  const res = await fetch(`${baseUrl}/products?${params}`, {
     headers: createAuthHeaders(),
     next: { revalidate: 300 },
   });
@@ -508,50 +522,50 @@ export async function getTrendingProducts(
   }
 }
 
-// Función para obtener productos destacados para el home (con etiqueta "home")
+/**
+ * Productos con tag "home" para Shop by category.
+ * En servidor (Vercel/producción): llama a WordPress directamente, sin autollamada a /api.
+ * En cliente: usa /api/products como antes.
+ */
 export async function getHomeProducts(limit: number = 8): Promise<Product[]> {
-  try {
-    console.log("🏠 Fetching home products...");
+  const isClient = typeof window !== "undefined";
 
-    // Intentar obtener productos con etiqueta "home" usando slug
-    console.log('🔍 Trying to get products with "home" tag slug...');
-    const filters: ProductFilters = {
-      tags: ["home"], // Usar slug
-    };
-    const response = await getProducts(1, limit, filters);
-    console.log(
-      `📦 Home products found with slug: ${response.products.length}`,
-    );
-
-    if (response.products.length > 0) {
-      console.log("✅ Successfully found home products with slug!");
-      return response.products;
-    }
-
-    // Si no hay productos con etiqueta "home", usar productos destacados como fallback
-    console.log(
-      "⭐ No home products found with slug, using featured products as fallback",
-    );
-    const fallbackResponse = await getProducts(1, limit, { featured: true });
-    console.log(
-      `📦 Featured products found: ${fallbackResponse.products.length}`,
-    );
-    return fallbackResponse.products;
-  } catch (error) {
-    console.error("❌ Error fetching home products:", error);
-    // Fallback final: obtener productos destacados
+  if (!isClient) {
+    // Servidor (producción/local): fetch directo a WooCommerce, igual que getRecommendedProducts.
     try {
-      console.log("🔄 Attempting fallback to featured products...");
+      const tagId = await fetchTagIdBySlug("home");
+      if (tagId) {
+        const res = await fetchProductsFromWooCommerce(1, limit, { tagId });
+        if (res.products.length > 0) return res.products;
+      }
+      const fallback = await fetchProductsFromWooCommerce(1, limit, {
+        featured: true,
+      });
+      return fallback.products;
+    } catch {
+      try {
+        const fallback = await fetchProductsFromWooCommerce(1, limit, {
+          featured: true,
+        });
+        return fallback.products;
+      } catch {
+        return [];
+      }
+    }
+  }
+
+  // Cliente: usar /api/products (window.location.origin)
+  try {
+    const filters: ProductFilters = { tags: ["home"] };
+    const response = await getProducts(1, limit, filters);
+    if (response.products.length > 0) return response.products;
+    const fallbackResponse = await getProducts(1, limit, { featured: true });
+    return fallbackResponse.products;
+  } catch {
+    try {
       const fallbackResponse = await getProducts(1, limit, { featured: true });
-      console.log(
-        `📦 Fallback featured products found: ${fallbackResponse.products.length}`,
-      );
       return fallbackResponse.products;
-    } catch (fallbackError) {
-      console.error(
-        "❌ Error fetching fallback featured products:",
-        fallbackError,
-      );
+    } catch {
       return [];
     }
   }
@@ -571,7 +585,7 @@ function transformWordPressCategory(wp: WordPressCategory): ProductCategory {
 async function fetchCategoriesFromWordPress(
   perPage: number = 100,
 ): Promise<ProductCategory[]> {
-  const base = API_CONFIG.baseUrl.replace(/([^:])\/\/+/g, "$1/").replace(/\/+$/, "");
+  const base = getWordPressBaseUrl();
   const params = new URLSearchParams({ per_page: perPage.toString() });
   const url = `${base}/products/categories?${params}`;
   const response = await fetch(url, {
