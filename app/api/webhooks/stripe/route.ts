@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 const WOOCOMMERCE_URL =
   process.env.NEXT_PUBLIC_WORDPRESS_API_URL ||
   process.env.WORDPRESS_API_URL ||
@@ -24,17 +22,20 @@ function createAuthHeader(): string {
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.text();
-    const signature = request.headers.get("stripe-signature");
+    const secretKey = process.env.STRIPE_SECRET_KEY;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const signature = request.headers.get("stripe-signature");
 
-    if (!webhookSecret || !signature) {
-      console.error("Webhook: missing STRIPE_WEBHOOK_SECRET or signature");
+    if (!secretKey || !webhookSecret || !signature) {
+      console.error("Webhook: missing STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET or signature");
       return NextResponse.json(
         { error: "Webhook configuration error" },
         { status: 500 },
       );
     }
+
+    const stripe = new Stripe(secretKey);
+    const body = await request.text();
 
     let event: Stripe.Event;
     try {

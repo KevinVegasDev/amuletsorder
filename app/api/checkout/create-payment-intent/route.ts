@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 /**
  * POST /api/checkout/create-payment-intent
  * Crea un PaymentIntent en Stripe para el pedido (checkout headless).
@@ -10,12 +8,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
       return NextResponse.json(
         { error: "STRIPE_SECRET_KEY not configured" },
         { status: 500 }
       );
     }
+
+    const stripe = new Stripe(secretKey);
 
     const body = await request.json();
     const { orderId, amount } = body as { orderId: number; amount: number };
