@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProductFilters as ProductFiltersType } from '../types/product';
 import ProductFilters from './ProductFilters';
 
@@ -21,6 +21,10 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
 }) => {
   const [tempFilters, setTempFilters] = useState<ProductFiltersType>(filters);
 
+  useEffect(() => {
+    if (isOpen) setTempFilters(filters);
+  }, [isOpen, filters]);
+
   const handleApplyFilters = () => {
     onFiltersChange(tempFilters);
     onClose();
@@ -38,18 +42,24 @@ const MobileFilters: React.FC<MobileFiltersProps> = ({
 
   const hasActiveFilters = Object.keys(tempFilters).length > 0;
 
-  if (!isOpen) return null;
-
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay: transición de opacidad al abrir/cerrar */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        className={`fixed inset-0 bg-black z-40 lg:hidden transition-opacity duration-300 ease-in-out ${
+          isOpen ? "opacity-50 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
         onClick={onClose}
+        aria-hidden={!isOpen}
       />
 
-      {/* Modal */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-white z-50 lg:hidden transform transition-transform duration-300 ease-in-out">
+      {/* Panel desde la izquierda: transición slide */}
+      <div
+        className={`fixed inset-y-0 left-0 w-full max-w-sm bg-white z-50 lg:hidden shadow-xl transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        aria-hidden={!isOpen}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Filters</h2>

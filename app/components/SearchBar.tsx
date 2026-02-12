@@ -1,15 +1,32 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface SearchBarProps {
   onToggleFilters?: () => void;
   onSearch?: (query: string) => void;
+  /** Si los filtros están visibles; usado para el texto del botón (Show/Hide filters) en desktop */
+  filtersVisible?: boolean;
+  /** En móvil, al tocar "Filters" se abre el sidebar de filtros por la izquierda */
+  onOpenMobileFilters?: () => void;
 }
 
-export default function SearchBar({ onToggleFilters, onSearch }: SearchBarProps) {
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(max-width: 1023px)");
+    setIsMobile(m.matches);
+    const fn = () => setIsMobile(m.matches);
+    m.addEventListener("change", fn);
+    return () => m.removeEventListener("change", fn);
+  }, []);
+  return isMobile;
+};
+
+export default function SearchBar({ onToggleFilters, onSearch, filtersVisible = true, onOpenMobileFilters }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const isMobile = useIsMobile();
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -19,12 +36,13 @@ export default function SearchBar({ onToggleFilters, onSearch }: SearchBarProps)
 
   return (
     <div className="flex flex-row gap-4 max-w-[601px] py-1.5">
-      {/* Botón Hide filters */}
+      {/* Móvil: "Filters" abre el sidebar. Desktop: "Hide filters" / "Show filters" */}
       <button
-        onClick={onToggleFilters}
-        className="px-8  font-semibold text-base text-negro   transition-colors whitespace-nowrap"
+        type="button"
+        onClick={isMobile ? onOpenMobileFilters : onToggleFilters}
+        className="px-8 font-semibold text-base text-negro transition-colors whitespace-nowrap hover:opacity-80"
       >
-        Hide filters
+        {isMobile ? "Filters" : (filtersVisible ? "Hide filters" : "Show filters")}
       </button>
 
       {/* Barra buscadora */}

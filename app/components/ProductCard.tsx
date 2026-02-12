@@ -14,7 +14,9 @@ interface ProductCardProps {
   className?: string;
   onAddToCart?: (product: Product) => void;
   onAddToWishlist?: (product: Product) => void;
-  showCartButtons?: boolean; // Show "Add to Cart" and "Buy Now" buttons (only in market)
+  showCartButtons?: boolean;
+  /** Filtro visible: imagen 306px; filtro oculto: imagen 439.8px (crece con el ancho) */
+  filtersVisible?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -22,6 +24,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   className = "",
   onAddToWishlist,
   showCartButtons = false,
+  filtersVisible = true,
 }) => {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
@@ -31,82 +34,41 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const isProcessingRef = useRef(false);
 
-  // Get wishlist from context - using optimized isInWishlist for O(1) lookup
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
   const { showToast } = useToast();
 
-  // Check if product is in wishlist - O(1) lookup instead of O(n) array search
   const isLiked = isInWishlist(product.id);
-
   const primaryImage = product.images[0];
   const secondaryImage = product.images[1];
+  const categoryName = product.categories?.[0]?.name ?? "";
 
   const handleAddToWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Prevent double clicks
     const target = e.currentTarget as HTMLButtonElement;
-    if (target.disabled) {
-      return;
-    }
-
-    // Temporarily disable button to prevent double clicks
+    if (target.disabled) return;
     target.disabled = true;
-    setTimeout(() => {
-      target.disabled = false;
-    }, 300);
-
-    // Check current state before toggle
+    setTimeout(() => { target.disabled = false; }, 300);
     const wasLiked = isLiked;
-
-    // Toggle wishlist - add if not liked, remove if liked
     toggleWishlist(product);
-
-    // Show toast notification
-    if (wasLiked) {
-      showToast(`${product.name} removed from saved items`, "info", 2000);
-    } else {
-      showToast(`${product.name} added to saved items`, "success", 2000);
-    }
-
-    // Call prop if exists (for backward compatibility)
-    if (onAddToWishlist) {
-      onAddToWishlist(product);
-    }
+    showToast(wasLiked ? `${product.name} removed from saved items` : `${product.name} added to saved items`, wasLiked ? "info" : "success", 2000);
+    onAddToWishlist?.(product);
   };
 
   const handleAddToCartClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Prevenir múltiples ejecuciones simultáneas
-    if (isProcessingRef.current || isAddingToCart) {
-      return;
-    }
-
-    // Validar stock antes de agregar
+    if (isProcessingRef.current || isAddingToCart) return;
     if (!product.inStock) {
       showToast(`${product.name} is out of stock`, "error", 3000);
       return;
     }
-
     isProcessingRef.current = true;
     setIsAddingToCart(true);
-
-    // Simular un pequeño delay para mostrar el estado de carga
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    // Usar el contexto para agregar al carrito (solo una vez)
+    await new Promise((r) => setTimeout(r, 300));
     addToCart(product, 1);
-
-    // Show toast notification
     showToast(`${product.name} added to cart`, "success", 2000);
-
-    // NO llamar a onAddToCart prop porque ya usamos el contexto directamente
-    // La prop es solo para retrocompatibilidad pero no debería duplicar la acción
-
     setIsAddingToCart(false);
     isProcessingRef.current = false;
   };
@@ -114,58 +76,43 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleBuyNow = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Validar stock antes de agregar
     if (!product.inStock || isBuyingNow) {
-      if (!product.inStock) {
-        showToast(`${product.name} is out of stock`, "error", 3000);
-      }
+      if (!product.inStock) showToast(`${product.name} is out of stock`, "error", 3000);
       return;
     }
-
     setIsBuyingNow(true);
-
-    // Simular un pequeño delay para mostrar el estado de carga
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    // Agregar al carrito y redirigir a checkout
+    await new Promise((r) => setTimeout(r, 300));
     addToCart(product, 1);
     showToast(`${product.name} added to cart`, "success", 2000);
-
-    // Redirigir a checkout después de un breve delay
-    setTimeout(() => {
-      window.location.href = "/checkout";
-    }, 500);
+    setTimeout(() => { window.location.href = "/checkout"; }, 500);
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(price);
-  };
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(price);
+
+  const discountPercent =
+    product.onSale && product.regularPrice > 0
+      ? Math.round((1 - product.price / product.regularPrice) * 100)
+      : 0;
 
   return (
     <div
-      className={`group relative bg-white p-1 overflow-hidden flex flex-col w-full transition-all duration-300 ease-in-out hover:scale-[1.01] hover:z-10 ${className}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className={`flex flex-col gap-[14px] w-full min-h-[446px] overflow-hidden transition-all duration-300 ease-in-out hover:z-10 ${className}`}
     >
-      <Link
-        href={`/market/product/${product.slug}`}
-        prefetch={true}
-        className="h-full flex flex-col gap-2"
+      {/* Imagen: móvil 246px; desktop 306px con filtro abierto, 439.8px con filtro cerrado */}
+      <div
+        className={`relative w-full h-[246px] rounded-[16px] overflow-hidden bg-gray-50 flex-shrink-0 transition-[height] duration-300 ease-in-out ${filtersVisible ? "lg:h-[306px]" : "lg:h-[439.8px]"
+          }`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Imagen del producto */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-gray-50">
-          {/* Badge de SOLD OUT */}
-          {!product.inStock && (
-            <div className="absolute top-2 left-2 z-10 bg-white text-black text-xs font-semibold px-3 py-1.5 shadow-lg">
-              SOLD OUT
-            </div>
-          )}
+        {!product.inStock && (
+          <div className="absolute top-2 left-2 z-10  text-black text-xs font-semibold px-3 py-1.5 shadow-lg rounded">
+            SOLD OUT
+          </div>
+        )}
 
-          {/* Imagen principal */}
+        <Link href={`/market/product/${product.slug}`} prefetch className="block w-full h-full">
           {primaryImage && !imageError ? (
             <>
               <Image
@@ -176,12 +123,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   } ${imageLoading ? "scale-110 blur-sm" : "scale-100 blur-0"}`}
                 onLoad={() => setImageLoading(false)}
                 onError={() => setImageError(true)}
-                sizes="(min-width: 1280px) 45vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                sizes="430px"
                 quality={85}
                 loading="lazy"
               />
-
-              {/* Imagen secundaria para hover */}
               {secondaryImage && (
                 <Image
                   src={secondaryImage.src}
@@ -189,7 +134,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                   fill
                   className={`object-cover object-center transition-all duration-500 ${isHovered ? "opacity-100" : "opacity-0"
                     }`}
-                  sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  sizes="338px"
                   quality={85}
                   loading="lazy"
                 />
@@ -197,124 +142,74 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100">
-              <div className="text-gray-400 text-center">
-                <svg
-                  className="w-12 h-12 mx-auto mb-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <p className="text-sm">No image</p>
-              </div>
+              <span className="text-gray-400 text-sm">No image</span>
             </div>
           )}
+        </Link>
+      </div>
 
-          {/* Heart button - always visible, shows filled when liked */}
-          <button
-            type="button"
-            onClick={handleAddToWishlist}
-            onMouseEnter={() => setIsHeartHovered(true)}
-            onMouseLeave={() => setIsHeartHovered(false)}
-            className="absolute bottom-2 right-2 z-20 p-1 cursor-pointer transition-transform duration-200 hover:scale-110"
-            aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
-          >
-            <HeartIcon
-              color="var(--color-negro)"
-              filled={isLiked || isHeartHovered}
-            />
-          </button>
-
-        </div>
-
-        {/* Información del producto */}
-        <div className="flex flex-col text-[24px] font-light">
-          <div className="flex justify-between w-full">
-            <div className="h-[60px] flex-1 max-w-[192px] flex items-center">
-              <p className="text-negro leading-none">{product.name}</p>
-            </div>
-            <span className="text-negro leading-none ml-3 self-center">
-              {formatPrice(product.price)}
-            </span>
-          </div>
-        </div>
-      </Link>
-
-      {/* Botones de acción - Solo en market, siempre visibles */}
-      {showCartButtons && (
-        <div className="flex gap-2 mt-2">
-          <button
-            type="button"
-            onClick={handleAddToCartClick}
-            disabled={!product.inStock || isAddingToCart}
-            className="flex-1 px-4 py-2.5 bg-white text-negro font-medium text-sm rounded hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-          >
-            {isAddingToCart ? (
+      {/* Título, categoría, precio, descuento */}
+      <div className="flex flex-col gap-1 flex-1 min-h-0">
+        <Link href={`/market/product/${product.slug}`} prefetch className="flex flex-col gap-1">
+          <p className="md:text-[20px] text-[16px] font-medium text-negro leading-tight">{product.name}</p>
+          {categoryName && (
+            <p className="md:text-[16px] text-[14px] font-light text-negro">{categoryName}</p>
+          )}
+          <div className="flex flex-wrap items-center gap-1 text-[16px] font-medium text-negro">
+            <span>{formatPrice(product.price)}</span>
+            {product.onSale && product.regularPrice > 0 && (
               <>
-                <svg
-                  className="animate-spin h-4 w-4 text-negro"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span>Adding...</span>
+                <span className="text-negro">—</span>
+                <span className="text-rosa line-through">{formatPrice(product.regularPrice)}</span>
+                <span className="text-rosa">{discountPercent}% OFF</span>
               </>
-            ) : (
-              "Add to Cart"
             )}
-          </button>
+          </div>
+        </Link>
+      </div>
+
+      {/* CTAs: flex-col gap-4px; Buy now primero y ancho completo; luego Add to cart y Liked */}
+      {showCartButtons && (
+        <div className="flex flex-col gap-1">
           <button
             type="button"
             onClick={handleBuyNow}
             disabled={!product.inStock || isBuyingNow}
-            className="flex-1 px-4 py-2.5 bg-negro text-white font-medium text-sm rounded hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+            className="w-full bg-negro text-mostaza py-[12px] rounded-[12px] font-medium text-[16px] transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {isBuyingNow ? (
-              <>
-                <svg
-                  className="animate-spin h-4 w-4 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span>Processing...</span>
-              </>
+              <span className="inline-block h-4 w-4 border-2 border-mostaza border-t-transparent rounded-full animate-spin" />
             ) : (
-              "Buy Now"
+              "Buy now"
             )}
           </button>
+          <div className="flex flex-row md:gap-2 gap-1 w-full">
+            <button
+              type="button"
+              onClick={handleAddToCartClick}
+              disabled={!product.inStock || isAddingToCart}
+              className="flex-1 bg-negro text-white py-[12px] rounded-[12px] font-medium text-[16px] transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isAddingToCart ? (
+                <span className="inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "Add to Cart"
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleAddToWishlist}
+              onMouseEnter={() => setIsHeartHovered(true)}
+              onMouseLeave={() => setIsHeartHovered(false)}
+              className="flex items-center justify-center bg-negro rounded-[12px] p-[12px] transition-opacity hover:opacity-90 shrink-0"
+              aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <HeartIcon
+                color={isLiked ? "var(--color-rosa)" : "var(--color-blanco)"}
+                filled={true}
+              />
+            </button>
+          </div>
         </div>
       )}
     </div>

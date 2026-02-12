@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import CatalogLayout from "../components/CatalogLayout";
-import SearchBar from "../components/SearchBar";
+import MarketView from "./MarketView";
 import ProductSkeleton from "../components/ProductSkeleton";
 
 // Evitar prerender en build: fetches a /api usan localhost (no existe en build)
@@ -10,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Market() {
   return (
     <main className="min-h-screen bg-gray-50">
-      <div className="px-12">
+      <div className="w-full max-w-[1920px] mx-auto px-12">
         <Suspense
           fallback={
             <div className="py-8">
@@ -18,13 +17,7 @@ export default async function Market() {
             </div>
           }
         >
-          {/* Barra de búsqueda con botón Hide filters */}
-          <SearchBar />
-
-          {/* Catálogo de productos (usa useSearchParams) */}
-          <div className="py-8">
-            <CatalogLayout showFilters={true} />
-          </div>
+          <MarketView />
         </Suspense>
       </div>
     </main>

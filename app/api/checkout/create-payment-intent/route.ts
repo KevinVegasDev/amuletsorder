@@ -3,8 +3,6 @@ import Stripe from "stripe";
 
 /**
  * POST /api/checkout/create-payment-intent
- * Crea un PaymentIntent en Stripe para el pedido (checkout headless).
- * amount en dólares (ej: 240.00).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (!secretKey) {
       return NextResponse.json(
         { error: "STRIPE_SECRET_KEY not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -24,7 +22,7 @@ export async function POST(request: NextRequest) {
     if (!orderId || amount == null || amount <= 0) {
       return NextResponse.json(
         { error: "orderId and positive amount required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,11 +41,9 @@ export async function POST(request: NextRequest) {
       clientSecret: paymentIntent.client_secret,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Internal server error";
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
     console.error("Error creating payment intent:", error);
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

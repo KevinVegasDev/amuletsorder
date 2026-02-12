@@ -22,6 +22,9 @@ interface CatalogLayoutProps {
   onFiltersChange?: (filters: ProductFiltersType) => void;
   showFilters?: boolean;
   className?: string;
+  /** Control del panel de filtros en móvil (abre desde la izquierda). Si no se pasan, se usa estado interno. */
+  isMobileFiltersOpen?: boolean;
+  onCloseMobileFilters?: () => void;
 }
 
 const CatalogLayout: React.FC<CatalogLayoutProps> = ({
@@ -30,6 +33,8 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
   onFiltersChange,
   showFilters = true,
   className = "",
+  isMobileFiltersOpen: controlledMobileFiltersOpen,
+  onCloseMobileFilters,
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -82,7 +87,9 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
   const [currentFilters, setCurrentFilters] = useState<ProductFiltersType>(
     Object.keys(filters).length > 0 ? filters : getFiltersFromURL()
   );
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [internalMobileFiltersOpen, setInternalMobileFiltersOpen] = useState(false);
+  const isMobileFiltersOpen = controlledMobileFiltersOpen ?? internalMobileFiltersOpen;
+  const handleCloseMobileFilters = onCloseMobileFilters ?? (() => setInternalMobileFiltersOpen(false));
   const [productsPerPage, setProductsPerPage] = useState(12);
 
   // Sincronizar filtros con la URL cuando cambian los searchParams
@@ -328,8 +335,8 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
               key={page}
               onClick={() => handlePageChange(page)}
               className={`flex items-center justify-center w-10 h-10 text-sm font-medium transition-all duration-200 ${page === currentPage
-                  ? "text-white bg-negro border border-negro shadow-md transform scale-105"
-                  : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-negro hover:text-negro"
+                ? "text-white bg-negro border border-negro shadow-md transform scale-105"
+                : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-negro hover:text-negro"
                 }`}
               title={`Página ${page}`}
             >
@@ -416,9 +423,13 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     <div className={`w-full ${className}`}>
       {/* Layout principal con sidebar y contenido */}
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Sidebar de filtros (solo en desktop) */}
-        {showFilters && (
-          <aside className="hidden lg:block w-80 flex-shrink-0">
+        {/* Sidebar de filtros (solo en desktop): transición suave al mostrar/ocultar */}
+        <div
+          className={`hidden lg:block flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${showFilters ? "w-80" : "w-0"
+            }`}
+          style={{ minWidth: 0 }}
+        >
+          <aside className="w-80 pt-0">
             <div className="sticky top-24">
               <ProductFilters
                 filters={currentFilters}
@@ -427,40 +438,10 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
               />
             </div>
           </aside>
-        )}
+        </div>
 
         {/* Contenido principal */}
         <main className="flex-1 min-w-0">
-          {/* Botón de filtros para móviles */}
-          {showFilters && (
-            <div className="flex justify-end mb-6 lg:hidden">
-              <button
-                onClick={() => setIsMobileFiltersOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors duration-200"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                  />
-                </svg>
-                Filtros
-                {Object.keys(currentFilters).length > 0 && (
-                  <span className="ml-1 px-2 py-0.5 text-xs font-medium text-white bg-negro">
-                    {Object.keys(currentFilters).length}
-                  </span>
-                )}
-              </button>
-            </div>
-          )}
-
           {/* Contenido de productos */}
           {loading ? (
             <div className="py-16">
@@ -482,11 +463,12 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
             />
           ) : (
             <>
-              {/* Grid de productos */}
+              {/* Grid de productos: 4 columnas; cards 338px con filtros, 443px sin filtros */}
               <ProductGrid
                 products={products}
                 onAddToCart={handleAddToCart}
                 onAddToWishlist={handleAddToWishlist}
+                filtersVisible={showFilters}
                 className="mb-8"
               />
 
@@ -497,16 +479,14 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
             </>
           )}
 
-          {/* Filtros móviles */}
-          {showFilters && (
-            <MobileFilters
-              filters={currentFilters}
-              onFiltersChange={handleFiltersChange}
-              onClearFilters={clearFilters}
-              isOpen={isMobileFiltersOpen}
-              onClose={() => setIsMobileFiltersOpen(false)}
-            />
-          )}
+          {/* Filtros móviles: se abre desde la izquierda al tocar "Filters" en la barra */}
+          <MobileFilters
+            filters={currentFilters}
+            onFiltersChange={handleFiltersChange}
+            onClearFilters={clearFilters}
+            isOpen={isMobileFiltersOpen}
+            onClose={handleCloseMobileFilters}
+          />
         </main>
       </div>
     </div>

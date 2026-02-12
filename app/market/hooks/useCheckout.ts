@@ -224,13 +224,20 @@ export const useCheckout = ({
           newErrors.shippingAddress!.state = "State is required";
         }
         if (!shippingAddress.zipCode.trim()) {
-          newErrors.shippingAddress!.zipCode = "ZIP code is required";
-        } else if (
-          shippingAddress.country === "US" &&
-          !/^\d{5}(-\d{4})?$/.test(shippingAddress.zipCode)
-        ) {
-          newErrors.shippingAddress!.zipCode = "Please enter a valid ZIP code";
+          newErrors.shippingAddress!.zipCode = "Postal code is required";
+        } else if (shippingAddress.country === "US") {
+          // US: 12345 o 12345-6789 (solo dígitos)
+          if (!/^\d{5}(-\d{4})?$/.test(shippingAddress.zipCode.replace(/\s/g, ""))) {
+            newErrors.shippingAddress!.zipCode = "Please enter a valid ZIP code";
+          }
+        } else if (shippingAddress.country === "CA") {
+          // Canadá: A1A 1A1 (letra dígito letra espacio opcional dígito letra dígito)
+          const normalized = shippingAddress.zipCode.replace(/\s/g, "").toUpperCase();
+          if (!/^[A-Z]\d[A-Z]\d[A-Z]\d$/.test(normalized)) {
+            newErrors.shippingAddress!.zipCode = "Please enter a valid Canadian postal code (e.g. M5V 3L9)";
+          }
         }
+        // Resto de países: solo comprobamos que no esté vacío
         if (!shippingAddress.country.trim()) {
           newErrors.shippingAddress!.country = "Country is required";
         }
