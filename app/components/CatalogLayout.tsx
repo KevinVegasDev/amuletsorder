@@ -81,6 +81,11 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
       urlFilters.onSale = true;
     }
 
+    const search = searchParams.get("search");
+    if (search?.trim()) {
+      urlFilters.search = search.trim();
+    }
+
     return urlFilters;
   }, [searchParams]);
 
@@ -181,6 +186,10 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
 
     if (newFilters.onSale) {
       params.set("onSale", "true");
+    }
+
+    if (newFilters.search?.trim()) {
+      params.set("search", newFilters.search.trim());
     }
 
     const newURL = params.toString()

@@ -5,26 +5,32 @@ import React from "react";
 interface StaticAttributesProps {
   selectedAttributes: Record<string, string>;
   onAttributeChange: (attributeName: string, value: string) => void;
+  showSize?: boolean;
+  showColor?: boolean;
+  sizeButtonClassName?: string;
 }
 
 /**
  * Component to display static fallback attributes (Size, Color)
  */
+const DEFAULT_SIZE_CLASS = "px-4 py-2 border-2 rounded transition-colors duration-200 font-medium";
+
 export const StaticAttributes: React.FC<StaticAttributesProps> = ({
   selectedAttributes,
   onAttributeChange,
+  showSize = true,
+  showColor = true,
+  sizeButtonClassName = DEFAULT_SIZE_CLASS,
 }) => {
   return (
     <>
-      {/* Static Size */}
-      <div className="mb-6">
-        <label className="block text-negro font-medium mb-2">Talla</label>
+      {showSize && (
         <div className="flex gap-2 flex-wrap">
           {["S", "M", "X", "XL", "XLL"].map((size) => (
             <button
               key={size}
               onClick={() => onAttributeChange("Talla", size)}
-              className={`px-4 py-2 border-2 rounded transition-colors duration-200 font-medium ${
+              className={`${sizeButtonClassName} transition-colors duration-200 font-medium ${
                 selectedAttributes["Talla"] === size
                   ? "bg-negro text-white border-negro"
                   : "bg-white text-negro border-gray-300 hover:border-negro"
@@ -34,12 +40,10 @@ export const StaticAttributes: React.FC<StaticAttributesProps> = ({
             </button>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* Static Color */}
-      <div className="mb-6">
-        <label className="block text-negro font-medium mb-2">Color</label>
-        <div className="flex gap-3 flex-wrap">
+      {showColor && (
+        <div className="flex gap-4 flex-wrap">
           {[
             { name: "Black", value: "black", hex: "#000000" },
             { name: "Red", value: "red", hex: "#8B0000" },
@@ -76,7 +80,7 @@ export const StaticAttributes: React.FC<StaticAttributesProps> = ({
             </button>
           ))}
         </div>
-      </div>
+      )}
     </>
   );
 };

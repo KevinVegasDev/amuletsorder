@@ -1,73 +1,76 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Product, ProductImage } from "../../../types/product";
-import ProductImageGallery from "../../../components/ProductDetails/ProductImageGallery";
-import ProductImagePreview from "../../../components/ProductDetails/ProductImagePreview";
+import { ProductImageGrid } from "../../../components/ProductDetails/ProductImageGrid";
 import ProductDetails from "../../../components/ProductDetails/ProductDetails";
+import RecommendedSection from "../../../components/RecommendedSection";
 
 interface ProductPageClientProps {
   product: Product;
+  recommendedProducts?: Product[];
 }
 
-export default function ProductPageClient({ product }: ProductPageClientProps) {
-  // Combinar todas las imágenes: producto base + variaciones
+const FEATURED_TAG = "featured-detail";
+
+function isFeaturedDetail(img: ProductImage): boolean {
+  const tag = FEATURED_TAG.toLowerCase();
+  const alt = (img.alt || "").toLowerCase().trim();
+  const caption = (img.caption || "").toLowerCase().trim();
+  const name = (img.name || "").toLowerCase().trim();
+  return alt === tag || caption === tag || name === tag;
+}
+
+export default function ProductPageClient({
+  product,
+  recommendedProducts = [],
+}: ProductPageClientProps) {
   const allImages = useMemo(() => {
     const images: ProductImage[] = [...(product.images || [])];
-
-    // Agregar imágenes de variaciones si existen
-    if (product.variations && product.variations.length > 0) {
+    if (product.variations?.length) {
       product.variations.forEach((variation) => {
         if (variation.image) {
-          // Evitar duplicados comparando por ID o src
           const isDuplicate = images.some(
             (img) =>
               img.id === variation.image!.id || img.src === variation.image!.src
           );
-          if (!isDuplicate) {
-            images.push(variation.image);
-          }
+          if (!isDuplicate) images.push(variation.image);
         }
       });
     }
-
     return images;
   }, [product.images, product.variations]);
 
-  const [selectedImage, setSelectedImage] = useState<ProductImage | null>(
-    allImages.length > 0 ? allImages[0] : null
-  );
+  const featuredImages = useMemo(() => {
+    const filtered = allImages.filter(isFeaturedDetail);
+    const slice = filtered.slice(0, 2);
+    return slice.length > 0 ? slice : allImages.slice(0, 2);
+  }, [allImages]);
+
+  const galleryImages = useMemo(() => {
+    const withoutFeatured = allImages.filter((img) => !isFeaturedDetail(img));
+    return withoutFeatured.length > 0 ? withoutFeatured : allImages;
+  }, [allImages]);
 
   return (
-    <main className="w-full min-h-screen ">
-      <div className="w-full flex justify-center bg-blanco">
-        {/* Contenedor principal con max-height */}
-        <div className="w-full max-w-7xl min-h-[689px] max-h-[689px] flex flex-row px-4 sm:px-8 py-8">
-          {/* Galería de imágenes (izquierda) */}
-          <div className="flex-shrink-0 h-full">
-            <ProductImageGallery
-              images={allImages}
-              onImageSelect={setSelectedImage}
-              selectedImage={selectedImage}
-            />
+    <main className="w-full min-h-screen bg-blanco">
+      <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-8 py-8 flex flex-col gap-12">
+        {/* Bloque principal: galería (sin featured-detail para no repetir) + detalles */}
+        <div className="w-full flex flex-row gap-8 lg:gap-12">
+          <div className="flex-shrink-0">
+            <ProductImageGrid images={galleryImages} variant="gallery" />
           </div>
-
-          {/* Preview de imagen (centro) */}
-          <div className="flex-1 mx-4">
-            <ProductImagePreview
-              images={allImages}
-              selectedImage={selectedImage || undefined}
-            />
-          </div>
-
-          {/* Detalles del producto (derecha) */}
-          <div className="flex-shrink-0 w-[400px]">
-            <ProductDetails
-              product={product}
-              onVariationImageChange={setSelectedImage}
-            />
+          <div className="flex-1 min-w-0">
+            <ProductDetails product={product} />
           </div>
         </div>
+
+        {/* Debajo del bloque: solo las 1–2 imágenes featured-detail */}
+        <section className="w-full">
+          <ProductImageGrid images={featuredImages} variant="featured" />
+        </section>
+
+        <RecommendedSection products={recommendedProducts} />
       </div>
     </main>
   );

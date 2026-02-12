@@ -32,7 +32,7 @@ const API_CONFIG: WordPressAPIConfig = {
 // Función para crear headers de autenticación
 function createAuthHeaders(): HeadersInit {
   const auth = Buffer.from(
-    `${API_CONFIG.consumerKey}:${API_CONFIG.consumerSecret}`
+    `${API_CONFIG.consumerKey}:${API_CONFIG.consumerSecret}`,
   ).toString("base64");
   return {
     Authorization: `Basic ${auth}`,
@@ -42,7 +42,7 @@ function createAuthHeaders(): HeadersInit {
 
 // Función para transformar variación de WordPress a nuestro tipo ProductVariation
 function transformWordPressVariation(
-  wpVariation: WordPressVariation
+  wpVariation: WordPressVariation,
 ): ProductVariation {
   const attributes: Record<string, string> = {};
   wpVariation.attributes.forEach((attr) => {
@@ -75,7 +75,7 @@ function transformWordPressVariation(
 // Función para transformar producto de WordPress a nuestro tipo Product
 export function transformWordPressProduct(
   wpProduct: WordPressProduct,
-  variations?: ProductVariation[]
+  variations?: ProductVariation[],
 ): Product {
   const images: ProductImage[] = wpProduct.images.map((img) => {
     // Obtener la URL de imagen de mayor calidad disponible
@@ -97,6 +97,9 @@ export function transformWordPressProduct(
       src: highQualitySrc,
       alt: img.alt || wpProduct.name,
       name: img.name || wpProduct.name,
+      ...(typeof (img as { caption?: string }).caption === "string" && {
+        caption: (img as { caption?: string }).caption,
+      }),
     };
   });
 
@@ -122,7 +125,7 @@ export function transformWordPressProduct(
       options: attr.options,
       variation: attr.variation,
       position: attr.position,
-  }));
+    }));
 
   return {
     id: wpProduct.id,
@@ -152,7 +155,7 @@ export function transformWordPressProduct(
     // Buscar datos de Printful en meta_data
     printfulSyncProductId: (() => {
       const syncProductMeta = wpProduct.meta_data.find(
-        (meta) => meta.key === "_printful_sync_product_id"
+        (meta) => meta.key === "_printful_sync_product_id",
       );
       return syncProductMeta?.value ? Number(syncProductMeta.value) : undefined;
     })(),
@@ -163,7 +166,7 @@ export function transformWordPressProduct(
 export async function getProducts(
   page: number = 1,
   perPage: number = 12,
-  filters?: ProductFilters
+  filters?: ProductFilters,
 ): Promise<ProductsResponse> {
   try {
     const params = new URLSearchParams({
@@ -209,9 +212,10 @@ export async function getProducts(
       baseUrl = `${window.location.origin}/api/products`;
     } else {
       // En servidor, usar la URL base del entorno o localhost:3000
-      const host = process.env.NEXT_PUBLIC_APP_URL || 
-                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                   `http://localhost:${process.env.PORT || 3000}`;
+      const host =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+        `http://localhost:${process.env.PORT || 3000}`;
       baseUrl = `${host}/api/products`;
     }
 
@@ -234,26 +238,31 @@ export async function getProducts(
       console.error("[getProducts] Fetch error:", fetchError);
       // Si es un error de red o timeout
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
-        throw new Error("La solicitud tardó demasiado. Por favor, intenta nuevamente.");
+        throw new Error(
+          "La solicitud tardó demasiado. Por favor, intenta nuevamente.",
+        );
       }
       throw new Error(
-        `Error de conexión: ${fetchError instanceof Error ? fetchError.message : "Error desconocido"}`
+        `Error de conexión: ${fetchError instanceof Error ? fetchError.message : "Error desconocido"}`,
       );
     }
 
     if (!response.ok) {
       // Primero verificar el código de estado para mensajes específicos
       let errorMessage = `Error fetching products: ${response.status}`;
-      
+
       // Mensajes más específicos para errores comunes basados en el código de estado
       if (response.status === 503) {
-        errorMessage = "El servicio no está disponible temporalmente. Por favor, intenta nuevamente en unos momentos.";
+        errorMessage =
+          "El servicio no está disponible temporalmente. Por favor, intenta nuevamente en unos momentos.";
       } else if (response.status === 500) {
-        errorMessage = "Error interno del servidor. Por favor, intenta nuevamente más tarde.";
+        errorMessage =
+          "Error interno del servidor. Por favor, intenta nuevamente más tarde.";
       } else if (response.status === 404) {
-        errorMessage = "No se encontró la ruta de la API. Por favor, verifica la configuración.";
+        errorMessage =
+          "No se encontró la ruta de la API. Por favor, verifica la configuración.";
       }
-      
+
       // Intentar obtener más detalles del error (puede ser JSON o HTML)
       try {
         const contentType = response.headers.get("content-type");
@@ -266,21 +275,28 @@ export async function getProducts(
           // Si es HTML u otro formato, intentar leer el texto pero no usarlo si es muy largo
           const errorText = await response.text();
           // Solo usar el texto si es corto (probablemente un mensaje de error)
-          if (errorText && errorText.length < 200 && !errorText.includes("<!DOCTYPE")) {
+          if (
+            errorText &&
+            errorText.length < 200 &&
+            !errorText.includes("<!DOCTYPE")
+          ) {
             errorMessage = errorText;
           }
         }
       } catch (parseError) {
         // Si falla el parseo, usar el mensaje basado en el código de estado
-        console.warn("[getProducts] Could not parse error response:", parseError);
+        console.warn(
+          "[getProducts] Could not parse error response:",
+          parseError,
+        );
       }
-      
+
       console.error(`[getProducts] Error response:`, {
         status: response.status,
         statusText: response.statusText,
         message: errorMessage,
       });
-      
+
       // Crear error con información del código de estado
       const error = new Error(errorMessage) as Error & { statusCode?: number };
       error.statusCode = response.status;
@@ -296,7 +312,7 @@ export async function getProducts(
 
 // Función para obtener variaciones de un producto
 async function getProductVariations(
-  productId: number
+  productId: number,
 ): Promise<ProductVariation[]> {
   try {
     const response = await fetch(
@@ -304,7 +320,7 @@ async function getProductVariations(
       {
         headers: createAuthHeaders(),
         next: { revalidate: 300 },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -313,7 +329,7 @@ async function getProductVariations(
         return [];
       }
       throw new Error(
-        `Error fetching variations: ${response.status} ${response.statusText}`
+        `Error fetching variations: ${response.status} ${response.statusText}`,
       );
     }
 
@@ -333,12 +349,12 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       {
         headers: createAuthHeaders(),
         next: { revalidate: 300 },
-      }
+      },
     );
 
     if (!response.ok) {
       throw new Error(
-        `Error fetching product: ${response.status} ${response.statusText}`
+        `Error fetching product: ${response.status} ${response.statusText}`,
       );
     }
 
@@ -365,7 +381,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 // Función para obtener productos destacados
 export async function getFeaturedProducts(
-  limit: number = 8
+  limit: number = 8,
 ): Promise<Product[]> {
   try {
     const response = await getProducts(1, limit, { featured: true });
@@ -384,7 +400,7 @@ async function fetchTagIdBySlug(slug: string): Promise<number | null> {
   try {
     const res = await fetch(
       `${API_CONFIG.baseUrl}/products/tags?slug=${encodeURIComponent(slug)}&per_page=1`,
-      { headers: createAuthHeaders(), next: { revalidate: 300 } }
+      { headers: createAuthHeaders(), next: { revalidate: 300 } },
     );
     if (!res.ok) return null;
     const data: Array<{ id: number; slug: string }> = await res.json();
@@ -401,7 +417,7 @@ async function fetchTagIdBySlug(slug: string): Promise<number | null> {
 async function fetchProductsFromWooCommerce(
   page: number,
   perPage: number,
-  filters?: { tagId?: number; featured?: boolean }
+  filters?: { tagId?: number; featured?: boolean },
 ): Promise<ProductsResponse> {
   const params = new URLSearchParams({
     page: page.toString(),
@@ -411,15 +427,16 @@ async function fetchProductsFromWooCommerce(
   if (filters?.tagId) params.set("tag", filters.tagId.toString());
   if (filters?.featured) params.set("featured", "true");
 
-  const res = await fetch(
-    `${API_CONFIG.baseUrl}/products?${params}`,
-    { headers: createAuthHeaders(), next: { revalidate: 300 } }
-  );
+  const res = await fetch(`${API_CONFIG.baseUrl}/products?${params}`, {
+    headers: createAuthHeaders(),
+    next: { revalidate: 300 },
+  });
   if (!res.ok) {
     throw new Error(`WooCommerce products: ${res.status} ${res.statusText}`);
   }
   const wpProducts: WordPressProduct[] = await res.json();
-  const total = parseInt(res.headers.get("X-WP-Total") ?? "0") || wpProducts.length;
+  const total =
+    parseInt(res.headers.get("X-WP-Total") ?? "0") || wpProducts.length;
   const totalPages = parseInt(res.headers.get("X-WP-TotalPages") ?? "1") || 1;
   const products = wpProducts.map((p) => transformWordPressProduct(p));
   return {
@@ -436,18 +453,24 @@ async function fetchProductsFromWooCommerce(
  * Productos recomendados: fetch directo a WooCommerce (como CollectionSection).
  * No usa /api ni localhost → funciona desde IP/dominio que no sea localhost.
  */
-export async function getRecommendedProducts(limit: number = 10): Promise<Product[]> {
+export async function getRecommendedProducts(
+  limit: number = 10,
+): Promise<Product[]> {
   try {
     const tagId = await fetchTagIdBySlug("recomendado");
     if (tagId) {
       const res = await fetchProductsFromWooCommerce(1, limit, { tagId });
       if (res.products.length > 0) return res.products;
     }
-    const fallback = await fetchProductsFromWooCommerce(1, limit, { featured: true });
+    const fallback = await fetchProductsFromWooCommerce(1, limit, {
+      featured: true,
+    });
     return fallback.products;
   } catch {
     try {
-      const fallback = await fetchProductsFromWooCommerce(1, limit, { featured: true });
+      const fallback = await fetchProductsFromWooCommerce(1, limit, {
+        featured: true,
+      });
       return fallback.products;
     } catch {
       return [];
@@ -459,18 +482,24 @@ export async function getRecommendedProducts(limit: number = 10): Promise<Produc
  * Productos trending: fetch directo a WooCommerce (como CollectionSection).
  * No usa /api ni localhost → funciona desde IP/dominio que no sea localhost.
  */
-export async function getTrendingProducts(limit: number = 3): Promise<Product[]> {
+export async function getTrendingProducts(
+  limit: number = 3,
+): Promise<Product[]> {
   try {
     const tagId = await fetchTagIdBySlug("trending");
     if (tagId) {
       const res = await fetchProductsFromWooCommerce(1, limit, { tagId });
       if (res.products.length > 0) return res.products;
     }
-    const fallback = await fetchProductsFromWooCommerce(1, limit, { featured: true });
+    const fallback = await fetchProductsFromWooCommerce(1, limit, {
+      featured: true,
+    });
     return fallback.products;
   } catch {
     try {
-      const fallback = await fetchProductsFromWooCommerce(1, limit, { featured: true });
+      const fallback = await fetchProductsFromWooCommerce(1, limit, {
+        featured: true,
+      });
       return fallback.products;
     } catch {
       return [];
@@ -490,7 +519,7 @@ export async function getHomeProducts(limit: number = 8): Promise<Product[]> {
     };
     const response = await getProducts(1, limit, filters);
     console.log(
-      `📦 Home products found with slug: ${response.products.length}`
+      `📦 Home products found with slug: ${response.products.length}`,
     );
 
     if (response.products.length > 0) {
@@ -500,11 +529,11 @@ export async function getHomeProducts(limit: number = 8): Promise<Product[]> {
 
     // Si no hay productos con etiqueta "home", usar productos destacados como fallback
     console.log(
-      "⭐ No home products found with slug, using featured products as fallback"
+      "⭐ No home products found with slug, using featured products as fallback",
     );
     const fallbackResponse = await getProducts(1, limit, { featured: true });
     console.log(
-      `📦 Featured products found: ${fallbackResponse.products.length}`
+      `📦 Featured products found: ${fallbackResponse.products.length}`,
     );
     return fallbackResponse.products;
   } catch (error) {
@@ -514,13 +543,13 @@ export async function getHomeProducts(limit: number = 8): Promise<Product[]> {
       console.log("🔄 Attempting fallback to featured products...");
       const fallbackResponse = await getProducts(1, limit, { featured: true });
       console.log(
-        `📦 Fallback featured products found: ${fallbackResponse.products.length}`
+        `📦 Fallback featured products found: ${fallbackResponse.products.length}`,
       );
       return fallbackResponse.products;
     } catch (fallbackError) {
       console.error(
         "❌ Error fetching fallback featured products:",
-        fallbackError
+        fallbackError,
       );
       return [];
     }
@@ -538,9 +567,10 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
       baseUrl = `${window.location.origin}/api/categories`;
     } else {
       // En servidor, usar la URL base del entorno o localhost:3000
-      const host = process.env.NEXT_PUBLIC_APP_URL || 
-                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-                   `http://localhost:${process.env.PORT || 3000}`;
+      const host =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
+        `http://localhost:${process.env.PORT || 3000}`;
       baseUrl = `${host}/api/categories`;
     }
 
@@ -553,7 +583,7 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
         .json()
         .catch(() => ({ error: "Unknown error" }));
       throw new Error(
-        errorData.error || `Error fetching categories: ${response.status}`
+        errorData.error || `Error fetching categories: ${response.status}`,
       );
     }
 
@@ -567,7 +597,7 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
 // Función para obtener productos relacionados
 export async function getRelatedProducts(
   productId: number,
-  limit: number = 4
+  limit: number = 4,
 ): Promise<Product[]> {
   try {
     // Primero obtenemos el producto para ver sus categorías
@@ -576,7 +606,7 @@ export async function getRelatedProducts(
       {
         headers: createAuthHeaders(),
         next: { revalidate: 300 },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -609,7 +639,7 @@ export async function getRelatedProducts(
 export async function searchProducts(
   query: string,
   page: number = 1,
-  perPage: number = 12
+  perPage: number = 12,
 ): Promise<ProductsResponse> {
   return getProducts(page, perPage, { search: query });
 }
@@ -620,7 +650,7 @@ export async function getBanners(): Promise<Banner[]> {
     // Construir la URL base para la API REST de WordPress
     const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace(
       "/wc/v3",
-      "/wp/v2"
+      "/wp/v2",
     );
     console.log("🔗 URL base de WordPress API:", wpApiUrl);
 
@@ -629,17 +659,17 @@ export async function getBanners(): Promise<Banner[]> {
       `${wpApiUrl}/categories?slug=Banner`,
       {
         next: { revalidate: 300 }, // Cache por 5 minutos
-      }
+      },
     );
 
     console.log(
       "📊 Estado de la respuesta de categorías:",
-      categoriesResponse.status
+      categoriesResponse.status,
     );
 
     if (!categoriesResponse.ok) {
       throw new Error(
-        `Error obteniendo categoría banner: ${categoriesResponse.status} ${categoriesResponse.statusText}`
+        `Error obteniendo categoría banner: ${categoriesResponse.status} ${categoriesResponse.statusText}`,
       );
     }
 
@@ -659,14 +689,14 @@ export async function getBanners(): Promise<Banner[]> {
       `${wpApiUrl}/posts?categories=${categoryId}&_embed`,
       {
         next: { revalidate: 300 }, // Cache por 5 minutos
-      }
+      },
     );
 
     console.log("📊 Estado de la respuesta de posts:", postsResponse.status);
 
     if (!postsResponse.ok) {
       throw new Error(
-        `Error obteniendo posts de banner: ${postsResponse.status} ${postsResponse.statusText}`
+        `Error obteniendo posts de banner: ${postsResponse.status} ${postsResponse.statusText}`,
       );
     }
 
@@ -683,7 +713,7 @@ export async function getBanners(): Promise<Banner[]> {
         imageAlt:
           post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ||
           post.title.rendered,
-      })
+      }),
     );
 
     console.log("✅ Banners transformados:", banners);
@@ -700,7 +730,7 @@ export async function getCollections(): Promise<Collection[]> {
     // Construir la URL base para la API REST de WordPress
     const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace(
       "/wc/v3",
-      "/wp/v2"
+      "/wp/v2",
     );
     console.log("🔗 URL base de WordPress API para colecciones:", wpApiUrl);
 
@@ -709,17 +739,17 @@ export async function getCollections(): Promise<Collection[]> {
       `${wpApiUrl}/categories?slug=coleccion`,
       {
         next: { revalidate: 300 }, // Cache por 5 minutos
-      }
+      },
     );
 
     console.log(
       "📊 Estado de la respuesta de categorías:",
-      categoriesResponse.status
+      categoriesResponse.status,
     );
 
     if (!categoriesResponse.ok) {
       throw new Error(
-        `Error obteniendo categoría coleccion: ${categoriesResponse.status} ${categoriesResponse.statusText}`
+        `Error obteniendo categoría coleccion: ${categoriesResponse.status} ${categoriesResponse.statusText}`,
       );
     }
 
@@ -739,14 +769,14 @@ export async function getCollections(): Promise<Collection[]> {
       `${wpApiUrl}/posts?categories=${categoryId}&_embed&per_page=2`,
       {
         next: { revalidate: 300 }, // Cache por 5 minutos
-      }
+      },
     );
 
     console.log("📊 Estado de la respuesta de posts:", postsResponse.status);
 
     if (!postsResponse.ok) {
       throw new Error(
-        `Error obteniendo posts de coleccion: ${postsResponse.status} ${postsResponse.statusText}`
+        `Error obteniendo posts de coleccion: ${postsResponse.status} ${postsResponse.statusText}`,
       );
     }
 
@@ -763,7 +793,7 @@ export async function getCollections(): Promise<Collection[]> {
         imageAlt:
           post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ||
           post.title.rendered,
-      })
+      }),
     );
 
     console.log("✅ Colecciones transformadas:", collections);

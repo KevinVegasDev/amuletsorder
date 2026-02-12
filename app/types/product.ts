@@ -124,6 +124,7 @@ export interface WordPressProduct {
     src: string;
     name: string;
     alt: string;
+    caption?: string;
   }>;
   attributes: Array<{
     id: number;
@@ -246,6 +247,8 @@ export interface ProductImage {
   src: string;
   alt: string;
   name: string;
+  /** Leyenda/caption de la imagen en WordPress (si la API lo devuelve) */
+  caption?: string;
 }
 
 export interface ProductCategory {
@@ -279,6 +282,7 @@ export interface ProductFilters {
   featured?: boolean;
   onSale?: boolean;
   minRating?: number;
+  search?: string;
 }
 
 export interface ProductCategory {

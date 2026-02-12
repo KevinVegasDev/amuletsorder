@@ -26,17 +26,17 @@ export const ProductActions: React.FC<ProductActionsProps> = ({
   onToggleWishlist,
 }) => {
   return (
-    <div className="flex flex-col gap-3">
-      {/* Buy Now */}
+    <div className="flex flex-col gap-2">
+      {/* Buy now: ancho completo, py-12px px-32px, fondo negro, texto mostaza */}
       <button
         onClick={onBuyNow}
         disabled={!isInStock || isBuyingNow}
-        className="w-full px-6 py-3 bg-negro text-white font-medium rounded hover:bg-gray-800 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+        className="w-full py-3 px-8 bg-negro text-mostaza font-medium rounded-[12px] hover:opacity-90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
       >
         {isBuyingNow ? (
           <>
             <svg
-              className="animate-spin h-5 w-5 text-white"
+              className="animate-spin h-5 w-5 text-mostaza"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -48,31 +48,31 @@ export const ProductActions: React.FC<ProductActionsProps> = ({
                 r="10"
                 stroke="currentColor"
                 strokeWidth="4"
-              ></circle>
+              />
               <path
                 className="opacity-75"
                 fill="currentColor"
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
+              />
             </svg>
             <span>Processing...</span>
           </>
         ) : (
-          "Buy Now"
+          "Buy now"
         )}
       </button>
 
-      {/* Add to Cart y Favorito */}
-      <div className="flex gap-3">
+      {/* Add to Cart (todo el ancho disponible) + Liked 43×43 */}
+      <div className="flex flex-row gap-2">
         <button
           onClick={onAddToCart}
           disabled={!isInStock || isAddingToCart}
-          className="flex-1 px-6 py-3 bg-white text-negro border-2 border-gray-300 font-medium rounded hover:bg-gray-50 hover:border-negro transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+          className="flex-1 py-3 px-6 bg-negro text-white font-medium rounded-[12px] hover:opacity-90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
         >
           {isAddingToCart ? (
             <>
               <svg
-                className="animate-spin h-5 w-5 text-negro"
+                className="animate-spin h-5 w-5 text-white"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -84,12 +84,12 @@ export const ProductActions: React.FC<ProductActionsProps> = ({
                   r="10"
                   stroke="currentColor"
                   strokeWidth="4"
-                ></circle>
+                />
                 <path
                   className="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+                />
               </svg>
               <span>Adding...</span>
             </>
@@ -97,13 +97,12 @@ export const ProductActions: React.FC<ProductActionsProps> = ({
             "Add to Cart"
           )}
         </button>
-
         <button
           onClick={onToggleWishlist}
-          className="px-6 py-3 bg-white border-2 border-gray-300 rounded hover:bg-gray-50 hover:border-negro transition-colors duration-200 flex items-center justify-center"
+          className="w-[43px] h-[43px] shrink-0 flex items-center justify-center bg-negro rounded-[12px] hover:opacity-90 transition-opacity"
           aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
         >
-          <HeartIcon color="var(--color-negro)" filled={isLiked} />
+          <HeartIcon color="var(--color-blanco)" filled={isLiked} />
         </button>
       </div>
     </div>

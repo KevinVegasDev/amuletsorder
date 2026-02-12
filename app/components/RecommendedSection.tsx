@@ -50,7 +50,7 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
   }
 
   return (
-    <section className={`flex flex-col max-w-[1920px] mx-auto ${className}`}>
+    <section className={`flex flex-col w-full max-w-[1920px] mx-auto ${className}`}>
       {/* Div 1: Título y Controles */}
       <div className="flex flex-row justify-between px-[50px] py-[64px]">
         <h2 className="text-[32px] font-semibold text-black">
@@ -87,7 +87,7 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
       {/* Div 2: Carrusel */}
       <section
         ref={scrollContainerRef}
-        className="flex flex-row px-[50px] gap-[11px] overflow-x-auto scrollbar-hide"
+        className="flex flex-row justify-start px-[50px] gap-[11px] overflow-x-auto scrollbar-hide"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {products.map((product) => {
