@@ -412,58 +412,6 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     );
   };
 
-  // Información de resultados y controles
-  const ResultsInfo = () => {
-    if (loading || error) return null;
-
-    const start = (currentPage - 1) * productsPerPage + 1;
-    const end = Math.min(currentPage * productsPerPage, total);
-
-    return (
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <p className="text-sm text-gray-700">
-            Mostrando <span className="font-medium">{start}</span> a{" "}
-            <span className="font-medium">{end}</span> de{" "}
-            <span className="font-medium">{total}</span> productos
-          </p>
-
-          {/* Selector de productos por página */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="perPage" className="text-sm text-gray-600">
-              Mostrar:
-            </label>
-            <select
-              id="perPage"
-              value={productsPerPage}
-              onChange={(e) =>
-                handleProductsPerPageChange(Number(e.target.value))
-              }
-              className="text-sm border border-gray-300 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-negro focus:border-transparent"
-            >
-              <option value={12}>12</option>
-              <option value={24}>24</option>
-              <option value={36}>36</option>
-              <option value={48}>48</option>
-            </select>
-            <span className="text-sm text-gray-600">por página</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          {Object.keys(currentFilters).length > 0 && (
-            <button
-              onClick={clearFilters}
-              className="text-sm text-negro hover:text-gray-800 underline transition-colors duration-200"
-            >
-              Limpiar filtros
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className={`w-full ${className}`}>
       {/* Layout principal con sidebar y contenido */}
@@ -534,7 +482,6 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
             />
           ) : (
             <>
-              <ResultsInfo />
               {/* Grid de productos */}
               <ProductGrid
                 products={products}

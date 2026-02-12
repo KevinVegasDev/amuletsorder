@@ -23,9 +23,13 @@ interface UseCheckoutReturn {
   errors: CheckoutValidationErrors;
   isProcessing: boolean;
   shippingMethods: ShippingMethod[];
-  selectedShippingMethod: ShippingMethod;
-  /** true cuando las tarifas de envío vienen de la API de Printful (mismo cálculo que WooCommerce/Printful) */
+  selectedShippingMethod: ShippingMethod | null;
+  /** true cuando las tarifas vienen de Printful (igual que en el checkout de WooCommerce) */
   shippingFromPrintful: boolean;
+  /** true mientras se cargan las tarifas desde Printful */
+  shippingMethodsLoading: boolean;
+  /** true cuando Printful devuelve "State code is missing" (ej. US/CA requieren estado) */
+  shippingStateRequired: boolean;
 
   // Métodos
   setCurrentStep: (step: number) => void;
@@ -38,37 +42,17 @@ interface UseCheckoutReturn {
   handleNextStep: () => void;
   handlePreviousStep: () => void;
   /** Crea pedido en WC y PaymentIntent en Stripe; devuelve { orderId, orderKey, clientSecret } para mostrar Stripe Elements. Sin redirección. */
-  handleSubmit: () => Promise<{ orderId: number; orderKey: string; clientSecret: string } | null>;
+  handleSubmit: () => Promise<{
+    orderId: number;
+    orderKey: string;
+    clientSecret: string;
+  } | null>;
   getSteps: () => CheckoutStep[];
   calculateSubtotal: () => number;
   calculateShipping: () => number;
   calculateTax: () => number;
   calculateTotal: () => number;
 }
-
-const DEFAULT_SHIPPING_METHODS: ShippingMethod[] = [
-  {
-    id: "standard",
-    name: "Standard Shipping",
-    description: "5-7 business days",
-    price: 0,
-    estimatedDays: "5-7",
-  },
-  {
-    id: "express",
-    name: "Express Shipping",
-    description: "2-3 business days",
-    price: 15.99,
-    estimatedDays: "2-3",
-  },
-  {
-    id: "overnight",
-    name: "Overnight Shipping",
-    description: "Next business day",
-    price: 29.99,
-    estimatedDays: "1",
-  },
-];
 
 const DEFAULT_FORM_DATA: CheckoutFormData = {
   shippingAddress: {
@@ -92,7 +76,7 @@ const DEFAULT_FORM_DATA: CheckoutFormData = {
     cvv: "",
     saveCard: false,
   },
-  shippingMethod: "standard",
+  shippingMethod: "",
   sameAsShipping: true,
 };
 
@@ -113,24 +97,33 @@ export const useCheckout = ({
   const { cart, clearCart } = useCart();
   const { showToast } = useToast();
 
-  // Métodos de envío: estáticos por defecto, o dinámicos desde Printful cuando hay dirección
-  const [shippingMethodsState, setShippingMethodsState] = useState<ShippingMethod[]>(DEFAULT_SHIPPING_METHODS);
+  // Métodos de envío: solo los extraídos de WooCommerce (zonas) o Printful
+  const [shippingMethodsState, setShippingMethodsState] = useState<
+    ShippingMethod[]
+  >([]);
   const [shippingMethodsLoading, setShippingMethodsLoading] = useState(false);
   const [shippingFromPrintful, setShippingFromPrintful] = useState(false);
+  const [shippingStateRequired, setShippingStateRequired] = useState(false);
 
   const shippingMethods = shippingMethodsState;
   const selectedShippingMethod =
-    shippingMethods.find((m) => m.id === formData.shippingMethod) ||
-    shippingMethods[0];
+    shippingMethods.find((m) => m.id === formData.shippingMethod) ??
+    shippingMethods[0] ??
+    null;
 
-  // Obtener tarifas de envío (Printful o estáticas) cuando la dirección está lista
+  // Obtener tarifas de envío solo cuando hay país y ciudad (evita pedir con solo país)
   useEffect(() => {
     const addr = formData.shippingAddress;
-    if (!addr.country || (!addr.zipCode && !addr.city)) return;
+    if (!addr.country || !addr.city?.trim()) {
+      setShippingMethodsState([]);
+      setShippingStateRequired(false);
+      return;
+    }
 
     const cartItems = cart.items.map((item) => ({
       productId: item.product.id,
       quantity: item.quantity,
+      parentId: item.product.parentId,
       printfulVariantId: item.product.printfulVariants?.[0]?.variant_id,
       printfulSyncProductId: item.product.printfulSyncProductId,
     }));
@@ -143,21 +136,26 @@ export const useCheckout = ({
     })
       .then((res) => res.json())
       .then((data) => {
-        const rates = data.rates ?? DEFAULT_SHIPPING_METHODS;
-        setShippingMethodsState(Array.isArray(rates) ? rates : DEFAULT_SHIPPING_METHODS);
+        const rates = Array.isArray(data.rates) ? data.rates : [];
+        setShippingMethodsState(rates);
         setShippingFromPrintful(Boolean(data.fromPrintful));
+        setShippingStateRequired(Boolean(data.stateRequired));
         setFormData((prev) => {
-          const methods = Array.isArray(rates) ? rates : DEFAULT_SHIPPING_METHODS;
-          const currentExists = methods.some((m: ShippingMethod) => m.id === prev.shippingMethod);
-          if (!currentExists && methods.length > 0) {
-            return { ...prev, shippingMethod: methods[0].id };
+          const currentExists = rates.some(
+            (m: ShippingMethod) => m.id === prev.shippingMethod
+          );
+          if (!currentExists && rates.length > 0) {
+            return { ...prev, shippingMethod: rates[0].id };
           }
+          if (rates.length === 0) return { ...prev, shippingMethod: "" };
           return prev;
         });
       })
       .catch(() => {
-        setShippingMethodsState(DEFAULT_SHIPPING_METHODS);
+        setShippingMethodsState([]);
         setShippingFromPrintful(false);
+        setShippingStateRequired(false);
+        setFormData((prev) => ({ ...prev, shippingMethod: "" }));
       })
       .finally(() => setShippingMethodsLoading(false));
   }, [
@@ -213,7 +211,8 @@ export const useCheckout = ({
         if (!shippingAddress.phone.trim()) {
           newErrors.shippingAddress!.phone = "Phone number is required";
         } else if (!validatePhone(shippingAddress.phone)) {
-          newErrors.shippingAddress!.phone = "Please enter a valid phone number";
+          newErrors.shippingAddress!.phone =
+            "Please enter a valid phone number";
         }
         if (!shippingAddress.address.trim()) {
           newErrors.shippingAddress!.address = "Address is required";
@@ -278,41 +277,41 @@ export const useCheckout = ({
   /**
    * Actualizar método de pago
    */
-  const updatePaymentMethod = useCallback((payment: Partial<PaymentMethod>) => {
-    setFormData((prev) => ({
-      ...prev,
-      paymentMethod: {
-        ...prev.paymentMethod,
-        ...payment,
-      },
-    }));
-    // Limpiar errores del campo actualizado
-    if (errors.paymentMethod) {
-      const updatedErrors = { ...errors.paymentMethod };
-      Object.keys(payment).forEach((key) => {
-        delete updatedErrors[key as keyof PaymentMethod];
-      });
-      setErrors({
-        ...errors,
-        paymentMethod: Object.keys(updatedErrors).length
-          ? updatedErrors
-          : undefined,
-      });
-    }
-  }, [errors]);
+  const updatePaymentMethod = useCallback(
+    (payment: Partial<PaymentMethod>) => {
+      setFormData((prev) => ({
+        ...prev,
+        paymentMethod: {
+          ...prev.paymentMethod,
+          ...payment,
+        },
+      }));
+      // Limpiar errores del campo actualizado
+      if (errors.paymentMethod) {
+        const updatedErrors = { ...errors.paymentMethod };
+        Object.keys(payment).forEach((key) => {
+          delete updatedErrors[key as keyof PaymentMethod];
+        });
+        setErrors({
+          ...errors,
+          paymentMethod: Object.keys(updatedErrors).length
+            ? updatedErrors
+            : undefined,
+        });
+      }
+    },
+    [errors]
+  );
 
   /**
    * Establecer método de envío
    */
-  const setShippingMethod = useCallback(
-    (methodId: ShippingMethod["id"]) => {
-      setFormData((prev) => ({
-        ...prev,
-        shippingMethod: methodId,
-      }));
-    },
-    []
-  );
+  const setShippingMethod = useCallback((methodId: ShippingMethod["id"]) => {
+    setFormData((prev) => ({
+      ...prev,
+      shippingMethod: methodId,
+    }));
+  }, []);
 
   /**
    * Establecer si la dirección de facturación es la misma que la de envío
@@ -352,7 +351,7 @@ export const useCheckout = ({
    * Calcular costo de envío
    */
   const calculateShipping = useCallback((): number => {
-    return selectedShippingMethod.price;
+    return selectedShippingMethod?.price ?? 0;
   }, [selectedShippingMethod]);
 
   /**
@@ -393,10 +392,21 @@ export const useCheckout = ({
       return null;
     }
 
+    if (!selectedShippingMethod) {
+      showToast(
+        "Please select a shipping method. Enter your address to see options from your store.",
+        "error",
+        4000
+      );
+      return null;
+    }
+
     setIsProcessing(true);
 
     try {
-      const { createWooCommerceOrder } = await import("../../lib/woocommerce-api");
+      const { createWooCommerceOrder } = await import(
+        "../../lib/woocommerce-api"
+      );
 
       const totals = {
         subtotal: calculateSubtotal(),
@@ -430,13 +440,10 @@ export const useCheckout = ({
       if (!clientSecret) throw new Error("Missing client secret");
 
       return { orderId: order.id, orderKey: order.order_key, clientSecret };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to prepare payment. Please try again.";
       console.error("Error preparing payment:", error);
-      showToast(
-        error.message || "Failed to prepare payment. Please try again.",
-        "error",
-        5000
-      );
+      showToast(message, "error", 5000);
       return null;
     } finally {
       setIsProcessing(false);
@@ -498,6 +505,8 @@ export const useCheckout = ({
     shippingMethods,
     selectedShippingMethod,
     shippingFromPrintful,
+    shippingMethodsLoading,
+    shippingStateRequired,
     setCurrentStep,
     updateShippingAddress,
     updatePaymentMethod,
@@ -515,4 +524,3 @@ export const useCheckout = ({
     calculateTotal,
   };
 };
-

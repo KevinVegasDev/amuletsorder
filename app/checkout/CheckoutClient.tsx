@@ -38,6 +38,8 @@ export const CheckoutClient: React.FC = () => {
     shippingMethods,
     selectedShippingMethod,
     shippingFromPrintful,
+    shippingMethodsLoading,
+    shippingStateRequired,
     updateShippingAddress,
     setShippingMethod,
     handleNextStep,
@@ -86,26 +88,19 @@ export const CheckoutClient: React.FC = () => {
           {/* Formulario (izquierda - 2/3) */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border border-gray-200 p-6 sm:p-8">
-              {/* Paso 0: Shipping (Stripe Address Element + email/phone + métodos estáticos) */}
+              {/* Paso 0: Shipping (formulario propio: nombre, email, teléfono, dirección; sin Stripe Address Element) */}
               {currentStep === 0 && (
-                <Elements
-                  stripe={stripePromise}
-                  options={{
-                    appearance: {
-                      theme: "stripe",
-                      variables: { colorPrimary: "#0a0a0a" },
-                    },
-                  }}
-                >
-                  <ShippingFormStripe
-                    shippingAddress={formData.shippingAddress}
-                    shippingMethods={shippingMethods}
-                    selectedShippingMethod={selectedShippingMethod}
-                    errors={errors}
-                    onShippingAddressChange={updateShippingAddress}
-                    onShippingMethodChange={setShippingMethod}
-                  />
-                </Elements>
+                <ShippingFormStripe
+                  shippingAddress={formData.shippingAddress}
+                  shippingMethods={shippingMethods}
+                  selectedShippingMethod={selectedShippingMethod}
+                  errors={errors}
+                  onShippingAddressChange={updateShippingAddress}
+                  onShippingMethodChange={setShippingMethod}
+                  loading={shippingMethodsLoading}
+                  ratesFromApi={shippingFromPrintful}
+                  stateRequiredForRates={shippingStateRequired}
+                />
               )}
 
               {/* Paso 1: Review o formulario de pago Stripe */}
@@ -144,8 +139,8 @@ export const CheckoutClient: React.FC = () => {
                       Shipping Method
                     </h3>
                     <div className="text-sm text-gray-700">
-                      <p className="font-medium">{selectedShippingMethod.name}</p>
-                      <p>{selectedShippingMethod.description}</p>
+                      <p className="font-medium">{selectedShippingMethod?.name ?? "—"}</p>
+                      <p>{selectedShippingMethod?.description ?? ""}</p>
                     </div>
                   </div>
                 </div>
@@ -162,6 +157,7 @@ export const CheckoutClient: React.FC = () => {
                     stripe={stripePromise}
                     options={{
                       clientSecret: paymentSession.clientSecret,
+                      locale: "en",
                       appearance: {
                         theme: "stripe",
                         variables: { colorPrimary: "#0a0a0a" },

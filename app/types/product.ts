@@ -237,6 +237,8 @@ export interface Product {
   // Datos específicos de Printful
   printfulVariants?: PrintfulVariant[];
   printfulSyncProductId?: number;
+  /** Id del producto padre en WooCommerce cuando este item es una variación (variable product) */
+  parentId?: number;
 }
 
 export interface ProductImage {

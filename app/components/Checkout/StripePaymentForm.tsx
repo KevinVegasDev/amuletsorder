@@ -65,9 +65,6 @@ export const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
       <PaymentElement
         options={{
           layout: "tabs",
-          defaultCollapsed: false,
-          radios: true,
-          spacedAccordionItems: true,
         }}
       />
       <button

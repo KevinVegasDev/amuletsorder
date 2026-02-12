@@ -11,6 +11,28 @@ function createAuthHeader(): string {
   return `Basic ${auth}`;
 }
 
+/** Item de línea en la respuesta GET order de WooCommerce */
+interface WooOrderLineItem {
+  id?: number;
+  name?: string;
+  product_id: number;
+  quantity: number;
+  total?: string;
+  image?: { src?: string };
+}
+
+/** Entrada de meta_data en la respuesta de WooCommerce */
+interface WooOrderMetaItem {
+  key: string;
+  value?: string | number | boolean;
+}
+
+/** Entrada de fee_lines en la respuesta de WooCommerce */
+interface WooOrderFeeLine {
+  name?: string;
+  total?: string;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -44,7 +66,7 @@ export async function GET(request: NextRequest) {
     }
 
     // line_items: nombre, cantidad, total; image puede no venir en la respuesta estándar
-    const line_items = (order.line_items || []).map((item: any) => ({
+    const line_items = (order.line_items || []).map((item: WooOrderLineItem) => ({
       id: item.id,
       name: item.name,
       product_id: item.product_id,
@@ -52,6 +74,23 @@ export async function GET(request: NextRequest) {
       total: item.total,
       image: item.image?.src || null,
     }));
+
+    // Totales para la pantalla de success (subtotal, envío, impuestos)
+    const lineItemsSubtotal = (order.line_items || []).reduce(
+      (sum: number, i: WooOrderLineItem) => sum + parseFloat(i.total || "0"),
+      0
+    );
+    // Si WooCommerce no envía subtotal o es 0, usar suma de line_items para que no salga $0.00
+    const subtotal =
+      order.line_items?.length > 0 && lineItemsSubtotal > 0
+        ? String(lineItemsSubtotal)
+        : (order.subtotal ?? String(lineItemsSubtotal));
+    const shippingTotal = order.shipping_total ?? order.total_shipping ?? "0";
+    // Tax: lo guardamos al crear el pedido en meta_data y/o fee_lines
+    const metaTax = order.meta_data?.find((m: WooOrderMetaItem) => m.key === "_headless_tax")?.value;
+    const feeTax = order.fee_lines?.find((f: WooOrderFeeLine) => f.name === "Tax")?.total;
+    const totalTax = metaTax ?? feeTax ?? order.total_tax ?? "0";
+    const discountTotal = order.discount_total ?? order.total_discount ?? "0";
 
     return NextResponse.json({
       id: order.id,
@@ -61,11 +100,16 @@ export async function GET(request: NextRequest) {
       currency: order.currency || "USD",
       date_created: order.date_created,
       line_items,
+      subtotal,
+      shipping_total: String(shippingTotal),
+      total_tax: String(totalTax),
+      discount_total: String(discountTotal),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal server error";
     console.error("Error verifying order:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: message },
       { status: 500 },
     );
   }

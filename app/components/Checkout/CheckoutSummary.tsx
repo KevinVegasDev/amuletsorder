@@ -3,16 +3,23 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  MinusIcon,
+  PlusIcon,
+  TrashIcon,
+  InformationCircleIcon,
+} from "@heroicons/react/24/outline";
 import { useCart } from "../../contexts/CartContext";
+import { useToast } from "../../contexts/ToastContext";
 import { ShippingMethod } from "../../types/checkout";
 
 interface CheckoutSummaryProps {
-  selectedShippingMethod: ShippingMethod;
+  selectedShippingMethod: ShippingMethod | null;
   subtotal: number;
   shipping: number;
   tax: number;
   total: number;
-  /** Muestra que el envío está calculado por Printful (mismo que WooCommerce) */
+  /** Muestra que el envío viene de Printful (igual que en WooCommerce) */
   shippingFromPrintful?: boolean;
 }
 
@@ -27,7 +34,8 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   total,
   shippingFromPrintful = false,
 }) => {
-  const { cart } = useCart();
+  const { cart, updateQuantity, removeFromCart } = useCart();
+  const { showToast } = useToast();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -41,10 +49,10 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-negro mb-6">Order Summary</h2>
 
-        {/* Lista de productos */}
+        {/* Lista de productos con controles de cantidad */}
         <div className="space-y-4 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
           {cart.items.map((item) => (
-            <div key={item.product.id} className="flex gap-4">
+            <div key={item.product.id} className="flex gap-3">
               {/* Imagen del producto */}
               <div className="relative w-20 h-20 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
                 {item.product.images && item.product.images.length > 0 ? (
@@ -74,19 +82,49 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
                 )}
               </div>
 
-              {/* Información del producto */}
+              {/* Información del producto y controles */}
               <div className="flex-1 min-w-0">
-                <Link
-                  href={`/market/product/${item.product.slug}`}
-                  className="text-sm font-medium text-negro hover:text-gray-600 transition-colors line-clamp-2"
-                >
-                  {item.product.name}
-                </Link>
-                <div className="mt-1 text-sm text-gray-500">
-                  Quantity: {item.quantity}
+                <div className="flex items-start justify-between gap-2">
+                  <Link
+                    href={`/market/product/${item.product.slug}`}
+                    className="text-sm font-medium text-negro hover:text-gray-600 transition-colors line-clamp-2"
+                  >
+                    {item.product.name}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      removeFromCart(item.product.id);
+                      showToast(`${item.product.name} removed from cart`, "info", 2000);
+                    }}
+                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded flex-shrink-0"
+                    aria-label="Remove from cart"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
                 </div>
-                <div className="mt-1 text-sm font-medium text-negro">
-                  {formatPrice(item.product.price * item.quantity)}
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <div className="flex items-center border border-gray-200 rounded">
+                    <button
+                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                      className="p-1 hover:bg-gray-100 transition-colors"
+                      aria-label="Decrease quantity"
+                    >
+                      <MinusIcon className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <span className="px-2 py-0.5 text-sm font-medium min-w-[2rem] text-center">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                      className="p-1 hover:bg-gray-100 transition-colors"
+                      aria-label="Increase quantity"
+                    >
+                      <PlusIcon className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+                  <span className="text-sm font-medium text-negro">
+                    {formatPrice(item.product.price * item.quantity)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -102,7 +140,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
                 {formatPrice(shipping)}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {selectedShippingMethod.name}
+                {selectedShippingMethod?.name ?? "—"}
               </div>
               {shippingFromPrintful && (
                 <div className="text-xs text-gray-500 mt-0.5">
@@ -123,9 +161,23 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
             <span className="text-gray-600">Shipping</span>
             <span className="text-gray-900">{formatPrice(shipping)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Tax</span>
-            <span className="text-gray-900">{formatPrice(tax)}</span>
+          <div className="flex justify-between items-start text-sm gap-2">
+            <div>
+              <span className="text-gray-600 inline-flex items-center gap-1">
+                Tax
+                <span
+                  className="text-gray-400 hover:text-gray-600"
+                  title="An estimated 8% tax charge is applied to your order."
+                  aria-hidden
+                >
+                  <InformationCircleIcon className="w-4 h-4 flex-shrink-0" />
+                </span>
+              </span>
+              <p className="text-xs text-gray-500 mt-0.5">
+                An estimated 8% tax charge is applied to your order.
+              </p>
+            </div>
+            <span className="text-gray-900 flex-shrink-0">{formatPrice(tax)}</span>
           </div>
           <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
             <span className="text-negro">Total</span>

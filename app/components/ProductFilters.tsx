@@ -8,6 +8,60 @@ import {
 } from "../types/product";
 import { getProductCategories } from "../lib/wordpress-api";
 
+/* Acordeón estable fuera del padre para que la transición CSS no se pierda en re-renders */
+interface AccordionSectionProps {
+  id: string;
+  title: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  isFirst?: boolean;
+}
+
+const AccordionSection: React.FC<AccordionSectionProps> = ({
+  id,
+  title,
+  isOpen,
+  onToggle,
+  children,
+  isFirst = false,
+}) => (
+  <section className={`border-b border-negro ${isFirst ? "border-t" : ""}`}>
+    <button
+      type="button"
+      onClick={onToggle}
+      className="w-full flex items-center justify-between py-4 text-left hover:bg-gray-50 rounded-md px-2 transition-colors duration-200"
+      aria-controls={`filter-${id}`}
+      aria-expanded={isOpen}
+      id={`accordion-${id}`}
+    >
+      <h3 className="text-base font-medium text-negro">{title}</h3>
+      <svg
+        className={`w-5 h-5 text-negro shrink-0 transition-transform duration-300 ease-in-out ${isOpen ? "rotate-180" : "rotate-0"}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+    <div
+      id={`filter-${id}`}
+      role="region"
+      aria-labelledby={`accordion-${id}`}
+      className="filter-accordion-content"
+      data-state={isOpen ? "open" : "closed"}
+    >
+      <div>
+        <div className={`space-y-3 ${isOpen ? "pb-4" : ""}`}>
+          {children}
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 interface ProductFiltersProps {
   filters: ProductFiltersType;
   onFiltersChange: (filters: ProductFiltersType) => void;
@@ -22,11 +76,11 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   className = "",
 }) => {
   const searchParams = useSearchParams();
-  
+
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    categories: true,
+    categories: false,
     price: true,
-    features: true,
+    features: false,
   });
 
   const [priceRange, setPriceRange] = useState({
@@ -50,8 +104,8 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         const cats = await getProductCategories();
         // Excluir categorías "All" y "uncategorized" de WordPress
         const filteredCats = cats.filter(
-          (cat) => 
-            cat.slug.toLowerCase() !== "all" && 
+          (cat) =>
+            cat.slug.toLowerCase() !== "all" &&
             cat.slug.toLowerCase() !== "uncategorized"
         );
         setCategories(filteredCats);
@@ -74,7 +128,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
 
   const handleCategoryChange = (categorySlug: string, checked: boolean) => {
     console.log("📦 Category change:", { categorySlug, checked, currentFilters: filters.categories });
-    
+
     // Si se selecciona "All", limpiar todos los filtros de categorías
     if (categorySlug === "all" || categorySlug === "") {
       const newFilters = {
@@ -101,11 +155,23 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   };
 
   const handlePriceRangeChange = (min: number, max: number) => {
-    setPriceRange({ min, max });
-    onFiltersChange({
-      ...filters,
-      priceRange: { min, max },
-    });
+    // Si se hace click en el mismo rango, desmarcarlo (toggle)
+    const isActive = priceRange.min === min && priceRange.max === max;
+
+    if (isActive) {
+      // Desmarcar: resetear a valores por defecto y quitar el filtro
+      setPriceRange({ min: 0, max: 100 });
+      const newFilters = { ...filters };
+      delete newFilters.priceRange;
+      onFiltersChange(newFilters);
+    } else {
+      // Marcar: aplicar el nuevo rango
+      setPriceRange({ min, max });
+      onFiltersChange({
+        ...filters,
+        priceRange: { min, max },
+      });
+    }
   };
 
   // Sincronizar el rango de precio cuando cambien los filtros desde fuera
@@ -132,63 +198,17 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   };
 
 
-  const hasActiveFilters = Object.keys(filters).length > 0;
-
-  const FilterSection: React.FC<{
-    id: string;
-    title: string;
-    children: React.ReactNode;
-  }> = ({ id, title, children }) => {
-    const isOpen = openSections[id];
-
-    return (
-      <div className="border-b border-gray-200 last:border-b-0">
-        <button
-          onClick={() => toggleSection(id)}
-          className="w-full flex items-center justify-between py-4 text-left hover:bg-gray-50 transition-colors duration-200"
-        >
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-          <svg
-            className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
-              isOpen ? "rotate-180" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
-
-        <div
-          className={`overflow-hidden transition-all duration-300 ${
-            isOpen ? "max-h-96 pb-4" : "max-h-0"
-          }`}
-        >
-          <div className="space-y-3">{children}</div>
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div
-        className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}
+        className={`py-8 px-6 rounded-2xl border border-negro flex flex-col ${className}`}
       >
-        <div className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-            <div className="space-y-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-4 bg-gray-200 rounded w-3/4"></div>
-              ))}
-            </div>
+        <div className="animate-pulse space-y-4">
+          <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-4 bg-gray-200 rounded w-3/4"></div>
+            ))}
           </div>
         </div>
       </div>
@@ -198,41 +218,68 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   if (error) {
     return (
       <div
-        className={`bg-white border border-gray-200 rounded-xl  ${className}`}
+        className={`py-8 px-6 rounded-2xl border border-negro flex flex-col ${className}`}
       >
-        <div className="p-6 text-red-500">{error}</div>
+        <div className="text-red-500">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-xl  ${className}`}>
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
-          {hasActiveFilters && (
-            <button
-              onClick={onClearFilters}
-              className="text-sm text-negro hover:text-gray-800 font-medium transition-colors duration-200"
-            >
-              Clear all
-            </button>
-          )}
-        </div>
+    <div className={`py-8 px-6 rounded-2xl border border-negro flex flex-col ${className}`}>
+      {/* Título */}
+      <div className="mb-4">
+        <h2 className="text-2xl font-semibold text-negro">Filters</h2>
       </div>
 
-      {/* Filters */}
-      <div className="p-6 space-y-0">
+      {/* Secciones de filtros */}
+      <div className="flex flex-col">
+        {/* Price Range - Primera sección con border-top */}
+        <AccordionSection
+          id="price"
+          title="Price"
+          isFirst
+          isOpen={openSections.price}
+          onToggle={() => toggleSection("price")}
+        >
+          <div className="flex flex-col gap-2">
+            {[
+              { label: "Under $25", min: 0, max: 25 },
+              { label: "$25- $50", min: 25, max: 50 },
+              { label: "$50- $100", min: 50, max: 100 },
+              { label: "$100- $200", min: 100, max: 200 },
+              { label: "Over $200", min: 200, max: 1000 },
+            ].map((range) => {
+              const isActive =
+                priceRange.min === range.min && priceRange.max === range.max;
+              return (
+                <button
+                  key={range.label}
+                  onClick={() => handlePriceRangeChange(range.min, range.max)}
+                  className={`w-full px-4 py-2.5 text-sm font-medium rounded-lg border ${isActive
+                    ? "bg-negro text-white border-negro"
+                    : "bg-white text-negro border-gray-300 hover:border-negro"
+                    }`}
+                >
+                  {range.label}
+                </button>
+              );
+            })}
+          </div>
+        </AccordionSection>
+
         {/* Categories */}
-        <FilterSection id="categories" title="Categories">
+        <AccordionSection
+          id="categories"
+          title="Categories"
+          isOpen={openSections.categories}
+          onToggle={() => toggleSection("categories")}
+        >
           <div className="space-y-3">
-            {/* Categorías de WordPress (excluyendo "All" y "uncategorized") */}
             {categories.map((category) => {
-              // Leer estado directamente desde la URL para sincronización perfecta con stories navigation
               const activeCategoriesFromURL = getActiveCategoriesFromURL();
               const isChecked = activeCategoriesFromURL.includes(category.slug);
-              
+
               return (
                 <label
                   key={category.id}
@@ -242,53 +289,26 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                     type="checkbox"
                     checked={isChecked}
                     onChange={(e) => {
-                      // Si se selecciona una categoría, desmarcar "All" automáticamente
                       handleCategoryChange(category.slug, e.target.checked);
                     }}
-                    className="form-checkbox h-4 w-4 text-negro border-gray-300 rounded focus:ring-negro focus:ring-2"
+                    className="h-5 w-5 text-negro border-gray-300 rounded focus:ring-negro focus:ring-2"
                   />
-                  <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900">
+                  <span className="ml-3 text-base text-negro group-hover:font-medium">
                     {category.name}
                   </span>
                 </label>
               );
             })}
           </div>
-        </FilterSection>
-
-        {/* Price Range */}
-        <FilterSection id="price" title="Price">
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {[
-                { label: "Under $25", min: 0, max: 25 },
-                { label: "$25 - $50", min: 25, max: 50 },
-                { label: "$50 - $100", min: 50, max: 100 },
-                { label: "$100 - $200", min: 100, max: 200 },
-                { label: "Over $200", min: 200, max: 1000 },
-              ].map((range) => {
-                const isActive =
-                  priceRange.min === range.min && priceRange.max === range.max;
-                return (
-                  <button
-                    key={range.label}
-                    onClick={() => handlePriceRangeChange(range.min, range.max)}
-                    className={`px-4 py-2.5 text-sm font-medium rounded-lg border-2 transition-all duration-200 ${
-                      isActive
-                        ? "bg-negro text-white border-negro shadow-sm"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-negro hover:bg-gray-50"
-                    }`}
-                  >
-                    {range.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </FilterSection>
+        </AccordionSection>
 
         {/* Features */}
-        <FilterSection id="features" title="Features">
+        <AccordionSection
+          id="features"
+          title="Features"
+          isOpen={openSections.features}
+          onToggle={() => toggleSection("features")}
+        >
           <div className="space-y-3">
             <label className="flex items-center group cursor-pointer">
               <input
@@ -297,10 +317,10 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onChange={(e) =>
                   handleFeatureChange("featured", e.target.checked)
                 }
-                className="rounded border-gray-300 text-negro focus:ring-negro focus:ring-offset-0 transition-colors duration-200"
+                className="h-5 w-5 rounded border-gray-300 text-negro focus:ring-negro focus:ring-2"
               />
-              <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
-                Featured products
+              <span className="ml-3 text-base text-negro group-hover:font-medium transition-all duration-200">
+                Limited offer
               </span>
             </label>
 
@@ -311,28 +331,15 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
                 onChange={(e) =>
                   handleFeatureChange("onSale", e.target.checked)
                 }
-                className="rounded border-gray-300 text-negro focus:ring-negro focus:ring-offset-0 transition-colors duration-200"
+                className="h-5 w-5 rounded border-gray-300 text-negro focus:ring-negro focus:ring-2"
               />
-              <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
-                On sale
+              <span className="ml-3 text-base text-negro group-hover:font-medium transition-all duration-200">
+                Discount
               </span>
             </label>
           </div>
-        </FilterSection>
-
+        </AccordionSection>
       </div>
-
-      {/* Footer with clear button */}
-      {hasActiveFilters && (
-        <div className="p-6 border-t border-gray-200">
-          <button
-            onClick={onClearFilters}
-            className="w-full px-4 py-3 text-sm font-medium text-negro border border-negro rounded-lg hover:bg-negro hover:text-white transition-all duration-200"
-          >
-            Clear all filters
-          </button>
-        </div>
-      )}
     </div>
   );
 };

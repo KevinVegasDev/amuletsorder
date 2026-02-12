@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useCart } from "../../contexts/CartContext";
 
@@ -22,12 +22,20 @@ interface OrderData {
   currency: string;
   date_created: string;
   line_items?: LineItem[];
+  /** Subtotal (productos) */
+  subtotal?: string;
+  /** Envío */
+  shipping_total?: string;
+  /** Impuestos */
+  total_tax?: string;
+  /** Descuento */
+  discount_total?: string;
 }
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "0000000000";
 const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "support@amuletsorder.com";
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const { clearCart } = useCart();
   const orderId = searchParams.get("order_id");
@@ -137,7 +145,7 @@ export default function CheckoutSuccessPage() {
         {/* Icono y título */}
         <div className="text-center mb-6">
           <div
-            className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-4"
+            className="w-16 h-16 rounded-full bg-negro flex items-center justify-center mx-auto mb-4"
             aria-hidden
           >
             <svg
@@ -202,9 +210,79 @@ export default function CheckoutSuccessPage() {
               <li className="text-gray-500 text-sm">No items in this order.</li>
             )}
           </ul>
-          <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
-            <span className="font-bold text-negro">Total</span>
-            <span className="font-bold text-negro">${parseFloat(order.total || "0").toFixed(2)}</span>
+
+          {/* Resumen de costos (estilo referencia: Subtotal, Shipping & Handling, Total Before Tax, Estimated Tax, Order Total) */}
+          <div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Subtotal</span>
+              <span className="text-gray-900">
+                ${parseFloat(order.subtotal ?? "0").toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Shipping & Handling</span>
+              <span className="text-gray-900">
+                {parseFloat(order.shipping_total ?? "0") > 0
+                  ? `$${parseFloat(order.shipping_total ?? "0").toFixed(2)}`
+                  : "Free"}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Total Before Tax</span>
+              <span className="text-gray-900">
+                ${(
+                  parseFloat(order.subtotal ?? "0") +
+                  parseFloat(order.shipping_total ?? "0")
+                ).toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between items-start text-sm gap-2">
+              <div>
+                <span className="text-gray-600 inline-flex items-center gap-1">
+                  Estimated Tax
+                  <span
+                    className="text-gray-400"
+                    title="An estimated 8% tax charge is applied to your order."
+                    aria-hidden
+                  >
+                    <svg
+                      className="w-4 h-4 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </span>
+                </span>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  An estimated 8% tax charge is applied to your order.
+                </p>
+              </div>
+              <span className="text-gray-900 flex-shrink-0">
+                ${parseFloat(order.total_tax ?? "0").toFixed(2)}
+              </span>
+            </div>
+            {parseFloat(order.discount_total ?? "0") > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Discount</span>
+                <span className="text-green-600">
+                  -${parseFloat(order.discount_total ?? "0").toFixed(2)}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
+              <span className="text-negro">Order Total</span>
+              <span className="text-negro">
+                ${parseFloat(order.total ?? "0").toFixed(2)}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -248,5 +326,24 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function CheckoutSuccessFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-negro mx-auto mb-4" />
+        <p className="text-gray-600">Verifying your order...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<CheckoutSuccessFallback />}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }

@@ -196,3 +196,21 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* Accordion de filtros: animación suave 300ms (estilo Radix/shadcn) */
+.filter-accordion-content {
+  display: grid;
+  align-items: start;
+  transition: grid-template-rows 300ms ease-in-out;
+  overflow: hidden;
+}
+.filter-accordion-content[data-state="open"] {
+  grid-template-rows: 1fr;
+}
+.filter-accordion-content[data-state="closed"] {
+  grid-template-rows: 0fr;
+}
+.filter-accordion-content > div {
+  overflow: hidden;
+  min-height: 0;
+}

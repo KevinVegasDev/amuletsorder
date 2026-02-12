@@ -49,6 +49,7 @@ export const useProductActions = ({
       return {
         ...product,
         id: selectedVariation.id,
+        parentId: product.id,
         price: selectedVariation.price,
         regularPrice: selectedVariation.regularPrice,
         salePrice: selectedVariation.salePrice,

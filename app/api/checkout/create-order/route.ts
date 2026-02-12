@@ -23,7 +23,9 @@ function getStoreBaseUrlFromApiUrl(apiBaseUrl: string): string {
  * Crear headers de autenticación para WooCommerce API
  */
 function createAuthHeader(): string {
-  const auth = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString("base64");
+  const auth = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString(
+    "base64"
+  );
   return `Basic ${auth}`;
 }
 
@@ -105,14 +107,8 @@ export async function POST(request: NextRequest) {
     const shippingAddress = transformShippingAddress(formData);
     const billingAddress = transformBillingAddress(formData);
 
-    // Método de envío: nombre pasado por frontend (Printful) o mapeo estático
-    const shippingMethodTitle =
-      shippingMethodName ||
-      (formData.shippingMethod === "express"
-        ? "Express Shipping"
-        : formData.shippingMethod === "overnight"
-          ? "Overnight Shipping"
-          : "Standard Shipping");
+    // Método de envío: nombre desde WooCommerce/Printful (pasado por frontend)
+    const shippingMethodTitle = shippingMethodName || "Shipping";
 
     // Crear objeto del pedido
     const orderData = {
@@ -129,11 +125,25 @@ export async function POST(request: NextRequest) {
           total: totals.shipping.toFixed(2),
         },
       ],
+      // Impuesto calculado en frontend (8%): lo guardamos como fee para que el total del pedido coincida con lo cobrado en Stripe
+      fee_lines:
+        totals.tax > 0
+          ? [
+              {
+                name: "Tax",
+                total: totals.tax.toFixed(2),
+                tax_class: "",
+                tax_status: "none" as const,
+              },
+            ]
+          : [],
       meta_data: [
         {
           key: "_stripe_source_id",
           value: "", // Se llenará cuando Stripe procese el pago
         },
+        // Backup del tax para la pantalla de success (por si fee_lines no se expone igual en la respuesta)
+        { key: "_headless_tax", value: totals.tax.toFixed(2) },
       ],
     };
 
@@ -157,12 +167,13 @@ export async function POST(request: NextRequest) {
       } catch {
         errorData = { message: errorText };
       }
-      
+
       console.error("WooCommerce API Error:", errorData);
       return NextResponse.json(
-        { 
-          success: false, 
-          error: errorData.message || `Error creating order: ${response.statusText}` 
+        {
+          success: false,
+          error:
+            errorData.message || `Error creating order: ${response.statusText}`,
         },
         { status: response.status }
       );
@@ -185,10 +196,11 @@ export async function POST(request: NextRequest) {
       payment_url: order.payment_url || fallbackPaymentUrl,
       status: order.status,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal server error";
     console.error("Error creating order:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Internal server error" },
+      { success: false, error: message },
       { status: 500 }
     );
   }
