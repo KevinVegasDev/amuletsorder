@@ -15,32 +15,31 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
   categories,
   categoryImages,
 }) => {
-  // Máximo 7 categorías
-  const homeCategories = categories.slice(0, 7);
-
-  if (homeCategories.length === 0) {
-    return null;
-  }
+  const homeCategories = (categories ?? []).slice(0, 7);
 
   return (
     <section className={`py-4 px-[50px] rounded-2xl ${className}`}>
-      {/* Título arriba a la izquierda */}
       <div className="p-4 max-w-[1920px] mx-auto justify-center py-16 items-center">
-        <h2 className="text-4xl font-bold text-black ">
+        <h2 className="text-4xl font-bold text-black">
           Shop by category
         </h2>
       </div>
 
-      {/* Flex row con las cards - máximo 7 */}
-      <div className="flex flex-row gap-4 mx-auto max-w-[1920px] ">
-        {homeCategories.map((category) => (
-          <HomeCategoryCard
-            key={category.id}
-            category={category}
-            imageUrl={categoryImages[category.slug]}
-          />
-        ))}
-      </div>
+      {homeCategories.length > 0 ? (
+        <div className="flex flex-row gap-4 mx-auto max-w-[1920px]">
+          {homeCategories.map((category) => (
+            <HomeCategoryCard
+              key={category.id}
+              category={category}
+              imageUrl={categoryImages?.[category.slug]}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="max-w-[1920px] mx-auto py-8 text-center text-gray-500 text-sm">
+          No categories available at the moment.
+        </div>
+      )}
     </section>
   );
 };

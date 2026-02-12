@@ -15,13 +15,13 @@ export interface FilterCategoryOptions {
    * @default ["uncategorized"]
    */
   excludeSlugs?: string[];
-  
+
   /**
    * Si debe excluir categorías sin productos
    * @default true
    */
   excludeEmpty?: boolean;
-  
+
   /**
    * Función personalizada para filtrar categorías
    */
@@ -37,7 +37,7 @@ export interface GroupProductsOptions {
    * @default true
    */
   avoidDuplicates?: boolean;
-  
+
   /**
    * Función personalizada para agrupar productos
    */
@@ -65,7 +65,7 @@ export interface ProductsDataResult {
  */
 export function filterCategories(
   categories: ProductCategory[],
-  options: FilterCategoryOptions = {}
+  options: FilterCategoryOptions = {},
 ): ProductCategory[] {
   const {
     excludeSlugs = ["uncategorized"],
@@ -98,7 +98,7 @@ export function filterCategories(
  */
 export function groupProductsByCategory(
   products: Product[],
-  options: GroupProductsOptions = {}
+  options: GroupProductsOptions = {},
 ): Record<string, Product[]> {
   const { avoidDuplicates = true, customGrouping } = options;
 
@@ -137,11 +137,9 @@ export function groupProductsByCategory(
  */
 export function getCategoriesWithProducts(
   categories: ProductCategory[],
-  productsByCategory: Record<string, Product[]>
+  productsByCategory: Record<string, Product[]>,
 ): ProductCategory[] {
-  return categories.filter(
-    (cat) => productsByCategory[cat.slug]?.length > 0
-  );
+  return categories.filter((cat) => productsByCategory[cat.slug]?.length > 0);
 }
 
 /**
@@ -150,15 +148,15 @@ export function getCategoriesWithProducts(
 export function getHomeCategories(
   categories: ProductCategory[],
   productsByCategory: Record<string, Product[]>,
-  products: Product[]
+  products: Product[],
 ): ProductCategory[] {
   // Obtener IDs de productos con tag "home"
   const homeProductIds = new Set(
     products
       .filter((product) =>
-        product.tags?.some((tag) => tag.slug.toLowerCase() === "home")
+        product.tags?.some((tag) => tag.slug.toLowerCase() === "home"),
       )
-      .map((product) => product.id)
+      .map((product) => product.id),
   );
 
   // Filtrar categorías que tienen al menos un producto con tag "home"
@@ -174,19 +172,19 @@ export function getHomeCategories(
  */
 export function getCategoryImages(
   categories: ProductCategory[],
-  productsByCategory: Record<string, Product[]>
+  productsByCategory: Record<string, Product[]>,
 ): Record<string, string> {
   const categoryImages: Record<string, string> = {};
 
   categories.forEach((category) => {
     const categoryProducts = productsByCategory[category.slug] || [];
-    
+
     // Obtener la primera imagen del primer producto de la categoría
     if (categoryProducts.length > 0) {
       const firstProduct = categoryProducts[0];
       if (firstProduct.images && firstProduct.images.length > 0) {
         let imageUrl = firstProduct.images[0].src;
-        
+
         // Mejorar calidad: remover dimensiones pequeñas de la URL para obtener imagen original
         // WordPress/WooCommerce a menudo agrega dimensiones como -150x150, -300x300, etc.
         if (
@@ -198,7 +196,7 @@ export function getCategoryImages(
           // Remover el patrón de dimensiones (ej: -300x300)
           imageUrl = imageUrl.replace(/-\d+x\d+/, "");
         }
-        
+
         categoryImages[category.slug] = imageUrl;
       }
     }
@@ -212,28 +210,26 @@ export function getCategoryImages(
  * Función helper principal para obtener y procesar datos de productos
  * Maneja errores y retorna estructura vacía si falla
  */
-export async function loadProductsData(options: {
-  /**
-   * Número de productos a cargar
-   * @default 20
-   */
-  productLimit?: number;
-  
-  /**
-   * Opciones para filtrar categorías
-   */
-  filterOptions?: FilterCategoryOptions;
-  
-  /**
-   * Opciones para agrupar productos
-   */
-  groupOptions?: GroupProductsOptions;
-} = {}): Promise<ProductsDataResult> {
-  const {
-    productLimit = 20,
-    filterOptions = {},
-    groupOptions = {},
-  } = options;
+export async function loadProductsData(
+  options: {
+    /**
+     * Número de productos a cargar
+     * @default 20
+     */
+    productLimit?: number;
+
+    /**
+     * Opciones para filtrar categorías
+     */
+    filterOptions?: FilterCategoryOptions;
+
+    /**
+     * Opciones para agrupar productos
+     */
+    groupOptions?: GroupProductsOptions;
+  } = {},
+): Promise<ProductsDataResult> {
+  const { productLimit = 20, filterOptions = {}, groupOptions = {} } = options;
 
   try {
     // Cargar productos, categorías, recomendados y trending (recomendados/trending
@@ -294,18 +290,21 @@ export async function loadProductsData(options: {
     // Obtener categorías que tienen productos
     const categoriesWithProducts = getCategoriesWithProducts(
       categories,
-      productsByCategory
+      productsByCategory,
     );
 
     // Obtener categorías con productos etiquetados como HOME
     const homeCategories = getHomeCategories(
       categories,
       productsByCategory,
-      products
+      products,
     );
 
     // Obtener imágenes para las categorías HOME
-    const categoryImages = getCategoryImages(homeCategories, productsByCategory);
+    const categoryImages = getCategoryImages(
+      homeCategories,
+      productsByCategory,
+    );
 
     return {
       products,

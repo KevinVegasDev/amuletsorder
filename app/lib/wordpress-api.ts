@@ -3,6 +3,7 @@
 import {
   WordPressProduct,
   WordPressVariation,
+  WordPressCategory,
   Product,
   ProductVariation,
   ProductAttribute,
@@ -556,27 +557,48 @@ export async function getHomeProducts(limit: number = 8): Promise<Product[]> {
   }
 }
 
+function transformWordPressCategory(wp: WordPressCategory): ProductCategory {
+  return {
+    id: wp.id,
+    name: wp.name,
+    slug: wp.slug,
+    description: wp.description,
+    count: wp.count,
+  };
+}
+
+/** Llamada directa a WordPress (solo servidor). Evita autollamada a /api/categories en Vercel. */
+async function fetchCategoriesFromWordPress(
+  perPage: number = 100,
+): Promise<ProductCategory[]> {
+  const base = API_CONFIG.baseUrl.replace(/([^:])\/\/+/g, "$1/").replace(/\/+$/, "");
+  const params = new URLSearchParams({ per_page: perPage.toString() });
+  const url = `${base}/products/categories?${params}`;
+  const response = await fetch(url, {
+    headers: createAuthHeaders(),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error(`WordPress categories: ${response.status}`);
+  }
+  const wpCategories: WordPressCategory[] = await response.json();
+  return wpCategories.map(transformWordPressCategory);
+}
+
 // Función para obtener categorías de productos
 export async function getProductCategories(): Promise<ProductCategory[]> {
   try {
-    // Construir URL absoluta
     const isClient = typeof window !== "undefined";
-    // En servidor, construir URL completa
-    let baseUrl: string;
-    if (isClient) {
-      baseUrl = `${window.location.origin}/api/categories`;
-    } else {
-      // En servidor, usar la URL base del entorno o localhost:3000
-      const host =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-        `http://localhost:${process.env.PORT || 3000}`;
-      baseUrl = `${host}/api/categories`;
+
+    if (!isClient) {
+      // En servidor (Vercel, Node): llamar a WordPress directamente.
+      // Así no dependemos de NEXT_PUBLIC_APP_URL ni de autollamada a /api/categories.
+      return await fetchCategoriesFromWordPress(100);
     }
 
-    const response = await fetch(baseUrl, {
-      cache: "no-store",
-    });
+    // En cliente: llamar a la API route de nuestra app
+    const baseUrl = `${window.location.origin}/api/categories`;
+    const response = await fetch(baseUrl, { cache: "no-store" });
 
     if (!response.ok) {
       const errorData = await response

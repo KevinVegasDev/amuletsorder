@@ -9,7 +9,7 @@ import {
 const API_CONFIG: WordPressAPIConfig = {
   baseUrl:
     process.env.NEXT_PUBLIC_WORDPRESS_API_URL ||
-    "https://headlessamulets.in//wp-json/wc/v3",
+    "https://headlessamulets.in/wp-json/wc/v3",
   consumerKey: process.env.WORDPRESS_CONSUMER_KEY || "",
   consumerSecret: process.env.WORDPRESS_CONSUMER_SECRET || "",
   version: "v3",
