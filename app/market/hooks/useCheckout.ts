@@ -128,36 +128,42 @@ export const useCheckout = ({
       printfulSyncProductId: item.product.printfulSyncProductId,
     }));
 
-    setShippingMethodsLoading(true);
-    fetch("/api/shipping/rates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address: addr, cartItems }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const rates = Array.isArray(data.rates) ? data.rates : [];
-        setShippingMethodsState(rates);
-        setShippingFromPrintful(Boolean(data.fromPrintful));
-        setShippingStateRequired(Boolean(data.stateRequired));
-        setFormData((prev) => {
-          const currentExists = rates.some(
-            (m: ShippingMethod) => m.id === prev.shippingMethod
-          );
-          if (!currentExists && rates.length > 0) {
-            return { ...prev, shippingMethod: rates[0].id };
-          }
-          if (rates.length === 0) return { ...prev, shippingMethod: "" };
-          return prev;
-        });
+    // Implementación de debounce: Esperamos 800ms sin cambios para hacer el llamado
+    const timeoutId = setTimeout(() => {
+      setShippingMethodsLoading(true);
+      fetch("/api/shipping/rates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: addr, cartItems }),
       })
-      .catch(() => {
-        setShippingMethodsState([]);
-        setShippingFromPrintful(false);
-        setShippingStateRequired(false);
-        setFormData((prev) => ({ ...prev, shippingMethod: "" }));
-      })
-      .finally(() => setShippingMethodsLoading(false));
+        .then((res) => res.json())
+        .then((data) => {
+          const rates = Array.isArray(data.rates) ? data.rates : [];
+          setShippingMethodsState(rates);
+          setShippingFromPrintful(Boolean(data.fromPrintful));
+          setShippingStateRequired(Boolean(data.stateRequired));
+          setFormData((prev) => {
+            const currentExists = rates.some(
+              (m: ShippingMethod) => m.id === prev.shippingMethod
+            );
+            if (!currentExists && rates.length > 0) {
+              return { ...prev, shippingMethod: rates[0].id };
+            }
+            if (rates.length === 0) return { ...prev, shippingMethod: "" };
+            return prev;
+          });
+        })
+        .catch(() => {
+          setShippingMethodsState([]);
+          setShippingFromPrintful(false);
+          setShippingStateRequired(false);
+          setFormData((prev) => ({ ...prev, shippingMethod: "" }));
+        })
+        .finally(() => setShippingMethodsLoading(false));
+    }, 800);
+
+    // Limpiar timeout si las dependencias cambian antes de los 800ms
+    return () => clearTimeout(timeoutId);
   }, [
     formData.shippingAddress.country,
     formData.shippingAddress.zipCode,
@@ -435,6 +441,8 @@ export const useCheckout = ({
         body: JSON.stringify({
           orderId: order.id,
           amount: totals.total,
+          email: formData.shippingAddress.email,
+          shippingAddress: formData.shippingAddress,
         }),
       });
 

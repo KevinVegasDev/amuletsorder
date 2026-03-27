@@ -17,7 +17,12 @@ export async function POST(request: NextRequest) {
     const stripe = new Stripe(secretKey);
 
     const body = await request.json();
-    const { orderId, amount } = body as { orderId: number; amount: number };
+    const { orderId, amount, email, shippingAddress } = body as { 
+      orderId: number; 
+      amount: number; 
+      email?: string; 
+      shippingAddress?: any; 
+    };
 
     if (!orderId || amount == null || amount <= 0) {
       return NextResponse.json(
@@ -31,9 +36,26 @@ export async function POST(request: NextRequest) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
       currency: "usd",
+      ...(email && { receipt_email: email }),
+      ...(shippingAddress && {
+        shipping: {
+          name: `${shippingAddress.firstName} ${shippingAddress.lastName}`.trim(),
+          phone: shippingAddress.phone || undefined,
+          address: {
+            line1: shippingAddress.address,
+            line2: shippingAddress.apartment || undefined,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            postal_code: shippingAddress.zipCode,
+            country: shippingAddress.country,
+          },
+        },
+      }),
+      description: `Amulets Order #${orderId}`,
       automatic_payment_methods: { enabled: true },
       metadata: {
         order_id: String(orderId),
+        customer_email: email || "No email provided",
       },
     });
 

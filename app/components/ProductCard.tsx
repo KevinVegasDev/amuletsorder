@@ -68,6 +68,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleAddToCartClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Si el producto tiene variaciones/atributos, obligar a ir a la página de detalle
+    const isVariable = product.type === "variable" || (product.attributes && product.attributes.length > 0);
+    if (isVariable) {
+      showToast("Please choose your options first", "info", 3000);
+      window.location.href = `/market/product/${product.slug}`;
+      return;
+    }
+
     if (isProcessingRef.current || isAddingToCart) return;
     if (!product.inStock) {
       showToast(`${product.name} is out of stock`, "error", 3000);
@@ -85,6 +94,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const handleBuyNow = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Si el producto tiene variaciones/atributos, obligar a ir a la página de detalle
+    const isVariable = product.type === "variable" || (product.attributes && product.attributes.length > 0);
+    if (isVariable) {
+      showToast("Please choose your options first", "info", 3000);
+      window.location.href = `/market/product/${product.slug}`;
+      return;
+    }
+
     if (!product.inStock || isBuyingNow) {
       if (!product.inStock)
         showToast(`${product.name} is out of stock`, "error", 3000);

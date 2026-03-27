@@ -33,10 +33,16 @@ function createAuthHeader(): string {
  * Transformar items del carrito al formato de WooCommerce
  */
 function transformCartItems(cartItems: CartItem[]) {
-  return cartItems.map((item) => ({
-    product_id: item.product.id,
-    quantity: item.quantity,
-  }));
+  return cartItems.map((item) => {
+    // Si el producto tiene parentId, significa que agregamos una variación al carrito.
+    // product.id es el ID de la variación y parentId es el ID del producto principal.
+    const isVariation = !!item.product.parentId;
+    return {
+      product_id: isVariation ? item.product.parentId : item.product.id,
+      quantity: item.quantity,
+      ...(isVariation && { variation_id: item.product.id }),
+    };
+  });
 }
 
 /**

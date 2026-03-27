@@ -6,6 +6,7 @@ import { Product, ProductImage } from "../../../types/product";
 import { ProductImageGrid } from "../../../components/ProductDetails/ProductImageGrid";
 import ProductDetails from "../../../components/ProductDetails/ProductDetails";
 import RecommendedSection from "../../../components/RecommendedSection";
+import FeaturesSection from "../../../components/FeaturesSection";
 
 interface ProductPageClientProps {
   product: Product;
@@ -13,6 +14,22 @@ interface ProductPageClientProps {
 }
 
 const FEATURED_TAG = "featured-detail";
+
+// Array de características con iconos y descripciones
+const featuresData = [
+  {
+    icon: "/icons/shipping.svg",
+    description: "Free shipping in +$30 orders ",
+  },
+  {
+    icon: "/icons/returns.svg",
+    description: "Secure payments",
+  },
+  {
+    icon: "/icons/payments.svg",
+    description: "Returns available within 15 days",
+  },
+];
 
 function isFeaturedDetail(img: ProductImage): boolean {
   const tag = FEATURED_TAG.toLowerCase();
@@ -88,11 +105,15 @@ export default function ProductPageClient({
         </div>
 
         {/* Debajo del bloque: solo las 1–2 imágenes featured-detail */}
-        <section className="w-full">
+        <section className="hidden md:block w-full">
           <ProductImageGrid images={featuredImages} variant="featured" />
         </section>
+      </div>
 
-        <RecommendedSection products={recommendedProducts} />
+      {/* Secciones de ancho completo */}
+      <RecommendedSection products={recommendedProducts} />
+      <div className="w-full max-w-[1920px] mx-auto">
+        <FeaturesSection features={featuresData} />
       </div>
     </main>
   );

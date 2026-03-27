@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { HeartIcon } from "../icons";
 
 interface ProductActionsProps {
@@ -8,8 +8,8 @@ interface ProductActionsProps {
   isAddingToCart: boolean;
   isBuyingNow: boolean;
   isLiked: boolean;
-  onAddToCart: () => Promise<void>;
-  onBuyNow: () => Promise<void>;
+  onAddToCart: () => Promise<void> | void;
+  onBuyNow: () => Promise<void> | void;
   onToggleWishlist: () => void;
 }
 
@@ -25,87 +25,51 @@ export const ProductActions: React.FC<ProductActionsProps> = ({
   onBuyNow,
   onToggleWishlist,
 }) => {
+  const [isHeartHovered, setIsHeartHovered] = useState(false);
+
   return (
-    <div className="flex flex-col gap-2">
-      {/* Buy now: ancho completo, py-12px px-32px, fondo negro, texto mostaza */}
+    <div className="flex flex-col md:flex-row md:gap-[14px] gap-[4px] w-full">
       <button
+        type="button"
         onClick={onBuyNow}
         disabled={!isInStock || isBuyingNow}
-        className="w-full py-3 px-8 bg-negro text-mostaza font-medium rounded-[12px] hover:opacity-90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+        className="w-full md:flex-1 md:w-auto min-w-0 text-negro border border-[#212121]/30 py-[12px] rounded-[12px] font-semibold text-[16px]/[19px] transition-colors duration-300 ease-in-out disabled:cursor-not-allowed flex hover:border-negro items-center justify-center cursor-pointer"
       >
         {isBuyingNow ? (
-          <>
-            <svg
-              className="animate-spin h-5 w-5 text-mostaza"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span>Processing...</span>
-          </>
+          <span className="inline-block h-4 w-4 border-2 border-negro border-t-transparent rounded-full animate-spin" />
         ) : (
           "Buy now"
         )}
       </button>
-
-      {/* Add to Cart (todo el ancho disponible) + Liked 43×43 */}
-      <div className="flex flex-row gap-2">
+      <div className="flex flex-row gap-[4px] md:gap-[14px] w-full md:w-auto md:flex-1">
         <button
+          type="button"
           onClick={onAddToCart}
           disabled={!isInStock || isAddingToCart}
-          className="flex-1 py-3 px-6 bg-negro text-white font-medium rounded-[12px] hover:opacity-90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+          className="flex-1 min-w-0 text-negro border border-[#212121]/30 py-[12px] rounded-[12px] font-semibold text-[16px]/[19px] transition-colors duration-300 ease-in-out disabled:cursor-not-allowed flex hover:border-negro items-center justify-center cursor-pointer"
         >
           {isAddingToCart ? (
-            <>
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              <span>Adding...</span>
-            </>
+            <span className="inline-block h-4 w-4 border-2 border-negro border-t-transparent rounded-full animate-spin" />
           ) : (
             "Add to Cart"
           )}
         </button>
         <button
+          type="button"
           onClick={onToggleWishlist}
-          className="w-[43px] h-[43px] shrink-0 flex items-center justify-center bg-negro rounded-[12px] hover:opacity-90 transition-opacity"
+          onMouseEnter={() => setIsHeartHovered(true)}
+          onMouseLeave={() => setIsHeartHovered(false)}
+          className="flex items-center justify-center border border-[#212121]/30 rounded-[12px] w-[43px] h-[43px] shrink-0 transition-colors duration-300 ease-in-out cursor-pointer disabled:cursor-not-allowed hover:border-negro"
           aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
         >
-          <HeartIcon color="var(--color-blanco)" filled={isLiked} />
+          <HeartIcon
+            color={isLiked ? "var(--color-rosa)" : "var(--color-negro)"}
+            filled={true}
+          />
         </button>
       </div>
     </div>
   );
 };
+
 
