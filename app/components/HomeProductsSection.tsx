@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
+import Image from "next/image";
 import { ProductCategory } from "../types/product";
 import HomeCategoryCard from "./HomeCategoryCard";
 
@@ -15,18 +16,71 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
   categories,
   categoryImages,
 }) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const homeCategories = (categories ?? []).slice(0, 7);
 
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: -340,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: 340,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
-    <section className={`py-4 px-[50px] rounded-2xl ${className}`}>
-      <div className="p-4 max-w-[1920px] mx-auto justify-center py-16 items-center">
-        <h2 className="text-4xl font-bold text-black">
+    <section className={`py-4 px-4 md:px-[50px] rounded-2xl ${className}`}>
+      <div className="flex flex-row justify-between items-center p-4 max-w-[1920px] mx-auto py-16">
+        <h2 className="text-[24px] sm:text-4xl font-bold text-black">
           Shop by category
         </h2>
+
+        {/* Controles de scroll - solo visible en lg (≤1024px) */}
+        <div className="flex flex-row gap-2">
+          <button
+            onClick={scrollLeft}
+            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+            aria-label="Scroll left"
+          >
+            <Image
+              src="/left-arrow.svg"
+              alt="Left arrow"
+              width={64}
+              height={64}
+              className="w-full h-full"
+            />
+          </button>
+          <button
+            onClick={scrollRight}
+            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+            aria-label="Scroll right"
+          >
+            <Image
+              src="/right-arrow.svg"
+              alt="Right arrow"
+              width={64}
+              height={64}
+              className="w-full h-full"
+            />
+          </button>
+        </div>
       </div>
 
       {homeCategories.length > 0 ? (
-        <div className="flex flex-row gap-4 mx-auto max-w-[1920px]">
+        <div
+          ref={scrollContainerRef}
+          className="flex flex-row gap-4 mx-auto max-w-[1920px] overflow-x-auto scrollbar-hide"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {homeCategories.map((category) => (
             <HomeCategoryCard
               key={category.id}

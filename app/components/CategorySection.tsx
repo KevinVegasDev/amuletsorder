@@ -29,7 +29,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
           {category.name}
         </h2>
         <Link
-          href={`/market?category=${category.slug}`}
+          href={`/market/category/${category.slug}`}
           className="flex items-center gap-2 text-black hover:text-gray-600 transition-colors duration-200 group"
         >
           <span className="text-sm font-medium">View all</span>

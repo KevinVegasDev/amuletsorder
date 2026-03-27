@@ -24,26 +24,23 @@ const CollectionStoriesNavigation: React.FC<CollectionStoriesNavigationProps> = 
     return null;
   }
 
+  // Categoría actual: desde path (/market/category/xxx) o desde query (retrocompat)
+  const categoryFromPath =
+    pathname.startsWith("/market/category/") && pathname !== "/market/category"
+      ? pathname.replace("/market/category/", "").split("/")[0]?.trim() || null
+      : null;
+  const currentCategory = categoryFromPath ?? searchParams.get("category");
+
   const handleCategoryClick = (categorySlug: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    
-    // Si la categoría ya está seleccionada, limpiar el filtro
-    if (params.get("category") === categorySlug) {
-      params.delete("category");
-    } else {
-      // Si no, establecer la categoría
-      params.set("category", categorySlug);
-    }
-    
-    // Actualizar la URL
-    const newURL = params.toString() 
-      ? `${pathname}?${params.toString()}`
-      : pathname;
-    
+    params.delete("category"); // ya no usamos category en query
+
+    const basePath =
+      currentCategory === categorySlug ? "/market" : `/market/category/${categorySlug}`;
+    const query = params.toString();
+    const newURL = query ? `${basePath}?${query}` : basePath;
     router.push(newURL, { scroll: false });
   };
-
-  const currentCategory = searchParams.get("category");
 
   return (
     <div

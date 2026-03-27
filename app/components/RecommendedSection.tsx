@@ -50,16 +50,18 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
   }
 
   return (
-    <section className={`flex flex-col w-full max-w-[1920px] mx-auto ${className}`}>
+    <section
+      className={`flex flex-col w-full max-w-[1920px] mx-auto ${className}`}
+    >
       {/* Div 1: Título y Controles */}
-      <div className="flex flex-row justify-between px-[50px] py-[64px]">
-        <h2 className="text-[32px] font-semibold text-black">
+      <div className="flex flex-row justify-between items-center px-4 md:px-[50px] py-[64px]">
+        <h2 className="text-[24px] md:text-[32px] font-semibold text-black">
           Recommended for you
         </h2>
         <div className="flex flex-row gap-2">
           <button
             onClick={scrollLeft}
-            className="w-16 h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
             aria-label="Scroll left"
           >
             <Image
@@ -67,11 +69,12 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
               alt="Left arrow"
               width={64}
               height={64}
+              className="w-full h-full"
             />
           </button>
           <button
             onClick={scrollRight}
-            className="w-16 h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
             aria-label="Scroll right"
           >
             <Image
@@ -79,6 +82,7 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
               alt="Right arrow"
               width={64}
               height={64}
+              className="w-full h-full"
             />
           </button>
         </div>
@@ -87,7 +91,7 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
       {/* Div 2: Carrusel */}
       <section
         ref={scrollContainerRef}
-        className="flex flex-row justify-start px-[50px] gap-[11px] overflow-x-auto scrollbar-hide"
+        className="flex flex-row justify-start md:px-[50px] px-4 gap-[11px] overflow-x-auto scrollbar-hide"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {products.map((product) => {
@@ -129,33 +133,50 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
               </div>
 
               {/* Div 2: Información */}
-              <div className="flex flex-row justify-between min-h-[80px] pb-[30px]">
+              <div className="flex flex-row justify-between min-h-[80px] pb-[30px] pr-4">
                 {/* Div 1: Title, Tag, Precio */}
-                <div className="flex flex-col ">
-                  <Link href={`/market/product/${product.slug}`} prefetch={true}>
-                    <h3 className="text-[20px] font-medium text-black">
+                <div className="flex flex-col max-w-[176px]">
+                  <Link
+                    href={`/market/product/${product.slug}`}
+                    prefetch={true}
+                  >
+                    <h3
+                      className="text-[20px] font-medium text-black truncate"
+                      title={product.name}
+                    >
                       {product.name}
                     </h3>
                   </Link>
                   <p className="text-[16px] font-light">{category}</p>
-                  <p className="text-base font-semibold text-black">
+                  <p className="text-base font-semibold text-black flex items-center gap-1">
                     {formatPrice(product.price)}
                     {product.onSale && product.salePrice && (
-                      <span className="text[16px] font-medium">
-                        {formatPrice(product.regularPrice)}
-                      </span>
+                      <>
+                        <span className="font-light">—</span>
+                        <span
+                          className="text-[16px] font-light line-through"
+                          style={{ color: "var(--color-rosa)" }}
+                        >
+                          {formatPrice(product.regularPrice)}
+                        </span>
+                      </>
                     )}
                   </p>
                 </div>
 
                 {/* Div 2: Icono wishlist */}
-                <div className="flex justify-end ">
+                <div className="flex items-center justify-ceter">
                   <button
                     onClick={handleWishlistClick}
-                    className="cursor-pointer hover:opacity-70 transition-opacity"
-                    aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-black py-[2px] cursor-pointer hover:opacity-70 transition-all"
+                    aria-label={
+                      isLiked ? "Remove from wishlist" : "Add to wishlist"
+                    }
                   >
-                    <HeartIcon color="black" filled={isLiked} />
+                    <HeartIcon
+                      color={isLiked ? "var(--color-rosa)" : "white"}
+                      filled={true}
+                    />
                   </button>
                 </div>
               </div>

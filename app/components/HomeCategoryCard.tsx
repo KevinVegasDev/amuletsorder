@@ -14,9 +14,9 @@ const HomeCategoryCard: React.FC<HomeCategoryCardProps> = ({
 }) => {
   return (
     <Link
-      href={`/market?category=${category.slug}`}
+      href={`/market/category/${category.slug}`}
       prefetch={true}
-      className="w-[290px] h-[420px] relative rounded-lg overflow-hidden group cursor-pointer"
+      className="min-w-[320px] lg:w-[290px] h-[420px] flex-shrink-0 relative rounded-lg overflow-hidden group cursor-pointer"
     >
       {/* Imagen de fondo */}
       {imageUrl && (

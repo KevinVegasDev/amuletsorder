@@ -10,10 +10,7 @@ interface TrendingProps {
   products: Product[];
 }
 
-const Trending: React.FC<TrendingProps> = ({
-  className = "",
-  products,
-}) => {
+const Trending: React.FC<TrendingProps> = ({ className = "", products }) => {
   // Solo mostrar los primeros 3 productos (índices 0, 1, 2)
   const displayProducts = products.slice(0, 3);
 
@@ -24,14 +21,12 @@ const Trending: React.FC<TrendingProps> = ({
   return (
     <section className={`max-w-[1920px] mx-auto flex flex-col ${className}`}>
       {/* Div 1: Título */}
-      <div className="px-[50px] py-[64px]">
-        <h4 className="text-[32px] font-semibold text-black">
-          Trending Wear
-        </h4>
+      <div className="md:px-[50px] px-4 py-[64px]">
+        <h4 className="text-[32px] font-semibold text-black">Trending Wear</h4>
       </div>
 
       {/* Div 2: Grid de imágenes */}
-      <div className="flex flex-row px-[50px] gap-[16px]">
+      <div className="flex flex-col md:flex-row md:px-[50px] px-4 gap-[16px]">
         {displayProducts.map((product) => {
           const primaryImage = product.images[0];
 
@@ -46,14 +41,13 @@ const Trending: React.FC<TrendingProps> = ({
                 className="group/image block w-full h-full"
               >
                 {primaryImage ? (
-                  <div className="relative w-full overflow-hidden rounded-2xl" style={{ height: "941px" }}>
+                  <div className="relative w-full overflow-hidden rounded-2xl h-[303px] md:h-[941px]">
                     <Image
                       src={primaryImage.src}
                       alt={primaryImage.alt || product.name}
                       fill
                       className="object-cover rounded-2xl transition-transform duration-300 "
-                      sizes="1500px"
-                      unoptimized={true}
+                      sizes="(max-width: 768px) 500px, 1500px"
                       loading="lazy"
                     />
                   </div>

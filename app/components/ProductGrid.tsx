@@ -38,7 +38,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
 }) => {
   const isMobile = useIsMobile();
   const cardWidthPx = filtersVisible ? CARD_WIDTH_WITH_FILTERS : CARD_WIDTH_WITHOUT_FILTERS;
-  const gridCols = isMobile ? `repeat(2, ${MOBILE_CARD_WIDTH}px)` : `repeat(4, ${cardWidthPx}px)`;
+  const gridCols = isMobile ? "repeat(2, 1fr)" : `repeat(4, ${cardWidthPx}px)`;
 
   return (
     <div

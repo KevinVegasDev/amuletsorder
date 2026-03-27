@@ -52,20 +52,24 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
 
   const total = getCartTotal();
 
-  if (!isOpen) return null;
-
   return (
     <>
       {/* Overlay para cerrar haciendo click fuera */}
       <div
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
+        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          isOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Sidebar - Fondo blanco con efecto glass */}
       <div
-        className="fixed top-0 right-0 h-full w-full sm:w-[400px] z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col"
+        className={`fixed top-0 right-0 h-full w-[70%] sm:w-[400px] z-50 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
         style={{
           background: "rgba(255, 255, 255, 0.95)",
           borderRadius: "16px 0 0 16px",
@@ -202,7 +206,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
                             showToast(
                               `${item.product.name} removed from cart`,
                               "info",
-                              2000
+                              2000,
                             );
                           }}
                           className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors duration-200"

@@ -7,7 +7,11 @@ import { useWishlist } from "../contexts/WishlistContext";
 import { useCart } from "../contexts/CartContext";
 import { useToast } from "../contexts/ToastContext";
 import { Product } from "../types/product";
-import { XMarkIcon, TrashIcon, ShoppingCartIcon } from "@heroicons/react/24/outline";
+import {
+  XMarkIcon,
+  TrashIcon,
+  ShoppingCartIcon,
+} from "@heroicons/react/24/outline";
 import { HeartIcon } from "./icons";
 
 interface WishlistDropdownProps {
@@ -15,7 +19,10 @@ interface WishlistDropdownProps {
   onClose: () => void;
 }
 
-const WishlistDropdown: React.FC<WishlistDropdownProps> = ({ isOpen, onClose }) => {
+const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const { wishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -57,20 +64,24 @@ const WishlistDropdown: React.FC<WishlistDropdownProps> = ({ isOpen, onClose }) 
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
       {/* Overlay para cerrar haciendo click fuera */}
       <div
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300"
+        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          isOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
         onClick={onClose}
         aria-hidden="true"
       />
 
       {/* Drawer - Fondo blanco con efecto glass (igual que el carrito) */}
       <div
-        className="fixed top-0 right-0 h-full w-full sm:w-[400px] z-50 shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col"
+        className={`fixed top-0 right-0 h-full w-[70%] sm:w-[400px] z-50 shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
         style={{
           background: "rgba(255, 255, 255, 0.95)",
           borderRadius: "16px 0 0 16px",
@@ -199,7 +210,11 @@ const WishlistDropdown: React.FC<WishlistDropdownProps> = ({ isOpen, onClose }) 
                         <button
                           onClick={() => {
                             toggleWishlist(item.product);
-                            showToast(`${item.product.name} removed from saved items`, "info", 2000);
+                            showToast(
+                              `${item.product.name} removed from saved items`,
+                              "info",
+                              2000,
+                            );
                           }}
                           className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors duration-200"
                           aria-label="Remove from wishlist"
@@ -233,4 +248,3 @@ const WishlistDropdown: React.FC<WishlistDropdownProps> = ({ isOpen, onClose }) 
 };
 
 export default WishlistDropdown;
-

@@ -22,11 +22,11 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
   }
 
   return (
-    <section className={`flex flex-row gap-[8px] ${className}`}>
+    <section className={`flex flex-col md:flex-row gap-[8px] ${className}`}>
       {displayCollections.map((collection) => (
         <div
           key={collection.id}
-          className=" min-h-[600px] relative  overflow-hidden group w-full"
+          className="min-h-[456px] max-h-[456px] md:min-h-[600px] md:max-h-none relative overflow-hidden group w-full"
         >
           {/* Imagen de fondo */}
           {collection.imageUrl && (
@@ -45,14 +45,14 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
           {/* Contenedor de texto y CTA */}
-          <div className="relative z-10 flex flex-col py-[64px] px-[32px] gap-[16px] h-full justify-end">
+          <div className="absolute inset-0 z-10 flex flex-col md:py-[64px] py-[24px] px-[32px] gap-[16px] justify-end">
             {/* Título */}
-            <h2 className="text-[40px] font-extrabold text-white uppercase">
+            <h2 className="md:text-[40px] text-[24px] font-extrabold text-white uppercase">
               {collection.title}
             </h2>
 
             {/* Descripción */}
-            <p className="text-[32px] text-white">
+            <p className="md:text-[32px] text-[20px] text-white">
               {collection.description}
             </p>
 
@@ -60,7 +60,7 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
             <Link
               href={collection.link || "/market"}
               prefetch={true}
-              className="inline-block bg-white text-black rounded-[12px] py-[16px] px-[32px] text-[20px] font-semibold w-fit hover:bg-gray-100 transition-colors"
+              className="inline-block bg-white text-black rounded-[12px] py-[16px] px-[32px] text-[20px]/[23px] font-semibold w-fit hover:bg-gray-100 transition-colors"
             >
               Shop now
             </Link>

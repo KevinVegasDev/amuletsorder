@@ -11,9 +11,12 @@ interface FeaturesSectionProps {
 
 export default function FeaturesSection({ features }: FeaturesSectionProps) {
   return (
-    <section className="flex flex-row gap-[10px] max-w-[1920px] mx-auto py-16 px-[50px] items-center   ">
+    <section className="flex md:flex-row flex-col gap-[10px] max-w-[1920px] mx-auto py-16 md:px-[50px] px-4 items-center   ">
       {features.map((feature, index) => (
-        <div key={index} className="flex items-center bg-gris rounded-[32px] justify-center w-full text-black py-16 px-[10px] gap-[10px]">
+        <div
+          key={index}
+          className="flex md:flex-row flex-col items-center bg-gris rounded-[32px] justify-center w-full text-black py-16 px-[10px] gap-[10px]"
+        >
           <div>
             <Image
               src={feature.icon}
@@ -24,7 +27,9 @@ export default function FeaturesSection({ features }: FeaturesSectionProps) {
             />
           </div>
           <div>
-            <span className="text-[24px]/28px ">{feature.description}</span>
+            <span className="text-[24px]/28px font-semibold ">
+              {feature.description}
+            </span>
           </div>
         </div>
       ))}

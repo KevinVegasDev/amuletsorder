@@ -44,6 +44,7 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     initialProducts?.products || []
   );
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(
@@ -51,12 +52,18 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
   );
   const [total, setTotal] = useState(initialProducts?.total || 0);
 
+  // Categoría desde path (/market/category/camisole) o desde query (?category=camisole)
+  const categoryFromPath =
+    pathname.startsWith("/market/category/") &&
+    pathname !== "/market/category"
+      ? pathname.replace("/market/category/", "").split("/")[0]?.trim() || null
+      : null;
+
   // Leer filtros de la URL al inicializar
   const getFiltersFromURL = useCallback((): ProductFiltersType => {
     const urlFilters: ProductFiltersType = {};
 
-    // Leer categoría de la URL
-    const categoryParam = searchParams.get("category");
+    const categoryParam = categoryFromPath ?? searchParams.get("category");
     if (categoryParam) {
       urlFilters.categories = [categoryParam];
     }
@@ -87,7 +94,7 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     }
 
     return urlFilters;
-  }, [searchParams]);
+  }, [searchParams, categoryFromPath]);
 
   const [currentFilters, setCurrentFilters] = useState<ProductFiltersType>(
     Object.keys(filters).length > 0 ? filters : getFiltersFromURL()
@@ -96,6 +103,18 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
   const isMobileFiltersOpen = controlledMobileFiltersOpen ?? internalMobileFiltersOpen;
   const handleCloseMobileFilters = onCloseMobileFilters ?? (() => setInternalMobileFiltersOpen(false));
   const [productsPerPage, setProductsPerPage] = useState(12);
+
+  // Redirigir URLs antiguas: /market?category=x -> /market/category/x
+  useEffect(() => {
+    if (pathname !== "/market") return;
+    const categoryParam = searchParams.get("category");
+    if (!categoryParam) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("category");
+    const basePath = `/market/category/${categoryParam}`;
+    const query = params.toString();
+    router.replace(query ? `${basePath}?${query}` : basePath, { scroll: false });
+  }, [pathname, searchParams, router]);
 
   // Sincronizar filtros con la URL cuando cambian los searchParams
   useEffect(() => {
@@ -110,14 +129,19 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     async (
       page: number = 1,
       newFilters: ProductFiltersType = currentFilters,
-      perPage: number = productsPerPage
+      perPage: number = productsPerPage,
+      append: boolean = false
     ) => {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       try {
         const response = await getProducts(page, perPage, newFilters);
-        setProducts(response.products);
+        setProducts((prev) => append ? [...prev, ...response.products] : response.products);
         setCurrentPage(response.currentPage);
         setTotalPages(response.totalPages);
         setTotal(response.total);
@@ -135,22 +159,21 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
           errorMessage.includes("Service Unavailable");
 
         if (isServiceUnavailable) {
-          // Para el market, cuando WordPress no está disponible, simplemente mostrar estado vacío
-          // NO hacer fallback a productos destacados porque el market debe mostrar TODOS los productos
-          // o los productos según los filtros del usuario, no cambiar a destacados
           console.log("⚠️ WordPress service unavailable, showing empty state");
-          setProducts([]);
-          setCurrentPage(1);
-          setTotalPages(0);
-          setTotal(0);
-          setError(null); // No mostrar error, solo estado vacío (consistente con el home)
+          if (!append) {
+            setProducts([]);
+            setCurrentPage(1);
+            setTotalPages(0);
+            setTotal(0);
+          }
+          setError(null);
           return;
         } else {
-          // Para otros errores, mostrar el mensaje original
           setError(errorMessage);
         }
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     },
     [currentFilters, productsPerPage]
@@ -163,14 +186,14 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     loadProducts(1, currentFilters, productsPerPage);
   }, [currentFilters, loadProducts, productsPerPage]);
 
-  // Actualizar URL con los filtros
+  // URLs amigables: categoría en el path (/market/category/camisole), resto en query
   const updateURL = useCallback((newFilters: ProductFiltersType) => {
+    const basePath =
+      newFilters.categories && newFilters.categories.length > 0
+        ? `/market/category/${newFilters.categories[0]}`
+        : "/market";
+
     const params = new URLSearchParams();
-
-    if (newFilters.categories && newFilters.categories.length > 0) {
-      params.set("category", newFilters.categories[0]); // Por ahora solo la primera categoría
-    }
-
     if (newFilters.priceRange) {
       if (newFilters.priceRange.min > 0) {
         params.set("minPrice", newFilters.priceRange.min.toString());
@@ -179,25 +202,14 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
         params.set("maxPrice", newFilters.priceRange.max.toString());
       }
     }
+    if (newFilters.featured) params.set("featured", "true");
+    if (newFilters.onSale) params.set("onSale", "true");
+    if (newFilters.search?.trim()) params.set("search", newFilters.search.trim());
 
-    if (newFilters.featured) {
-      params.set("featured", "true");
-    }
-
-    if (newFilters.onSale) {
-      params.set("onSale", "true");
-    }
-
-    if (newFilters.search?.trim()) {
-      params.set("search", newFilters.search.trim());
-    }
-
-    const newURL = params.toString()
-      ? `${pathname}?${params.toString()}`
-      : pathname;
-
+    const query = params.toString();
+    const newURL = query ? `${basePath}?${query}` : basePath;
     router.replace(newURL, { scroll: false });
-  }, [pathname, router]);
+  }, [router]);
 
   // Manejar cambios en filtros
   const handleFiltersChange = (newFilters: ProductFiltersType) => {
@@ -211,19 +223,12 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     loadProducts(1, newFilters, productsPerPage);
   };
 
-  // Manejar cambio de página
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    loadProducts(page, currentFilters, productsPerPage);
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // Manejar cambio de productos por página
-  const handleProductsPerPageChange = (perPage: number) => {
-    setProductsPerPage(perPage);
-    setCurrentPage(1);
-    loadProducts(1, currentFilters, perPage);
+  // Manejar "Load more"
+  const handleLoadMore = () => {
+    if (currentPage < totalPages && !loadingMore) {
+      const nextPage = currentPage + 1;
+      loadProducts(nextPage, currentFilters, productsPerPage, true);
+    }
   };
 
   // Limpiar filtros
@@ -244,7 +249,6 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
 
   // Manejar acciones de productos
   const handleAddToCart = (product: Product) => {
-    // Validar stock antes de agregar
     if (!product.inStock) {
       return;
     }
@@ -255,178 +259,7 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
     toggleWishlist(product);
   };
 
-  // Estado para el ancho de ventana
-  const [windowWidth, setWindowWidth] = useState(1024); // Valor por defecto para SSR
 
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    // Establecer el ancho inicial
-    setWindowWidth(window.innerWidth);
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Componente de paginación optimizado
-  const Pagination = () => {
-    if (totalPages <= 1) return null;
-
-    const pages = [];
-    const maxVisiblePages = windowWidth < 640 ? 3 : 7; // Responsive: menos páginas en móvil
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return (
-      <div className="flex flex-col items-center mt-8">
-        {/* Controles de paginación */}
-        <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-          {/* Botón primera página */}
-          {currentPage > 3 && (
-            <>
-              <button
-                onClick={() => handlePageChange(1)}
-                className="hidden sm:flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-negro transition-all duration-200"
-                title="Primera página"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <span className="hidden sm:block px-2 text-gray-400">...</span>
-            </>
-          )}
-
-          {/* Botón anterior */}
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-negro disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all duration-200"
-            title="Página anterior"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-
-          {/* Números de página */}
-          {pages.map((page) => (
-            <button
-              key={page}
-              onClick={() => handlePageChange(page)}
-              className={`flex items-center justify-center w-10 h-10 text-sm font-medium transition-all duration-200 ${page === currentPage
-                ? "text-white bg-negro border border-negro shadow-md transform scale-105"
-                : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-negro hover:text-negro"
-                }`}
-              title={`Página ${page}`}
-            >
-              {page}
-            </button>
-          ))}
-
-          {/* Botón siguiente */}
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-negro disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300 transition-all duration-200"
-            title="Página siguiente"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-
-          {/* Botón última página */}
-          {currentPage < totalPages - 2 && (
-            <>
-              <span className="hidden sm:block px-2 text-gray-400">...</span>
-              <button
-                onClick={() => handlePageChange(totalPages)}
-                className="hidden sm:flex items-center justify-center w-10 h-10 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-negro transition-all duration-200"
-                title="Última página"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                  />
-                </svg>
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Navegación rápida (solo en desktop) */}
-        {totalPages > 10 && (
-          <div className="hidden lg:flex items-center space-x-3 text-sm">
-            <span className="text-gray-600">Ir a página:</span>
-            <div className="flex items-center space-x-2">
-              <input
-                type="number"
-                min="1"
-                max={totalPages}
-                value={currentPage}
-                onChange={(e) => {
-                  const page = parseInt(e.target.value);
-                  if (page >= 1 && page <= totalPages) {
-                    handlePageChange(page);
-                  }
-                }}
-                className="w-16 px-2 py-1 text-center border border-gray-300 focus:outline-none focus:ring-2 focus:ring-negro focus:border-transparent"
-              />
-              <span className="text-gray-500">de {totalPages}</span>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className={`w-full ${className}`}>
@@ -481,10 +314,26 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
                 className="mb-8"
               />
 
-              {/* Controles de paginación en la parte inferior */}
-              <div className="mt-8">
-                <Pagination />
-              </div>
+              {/* Botón Load more */}
+              {currentPage < totalPages && (
+                <div className="flex justify-center mt-8">
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="bg-negro text-white px-[32px] py-[16px] rounded-[12px] font-semibold text-[16px] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <span className="inline-block h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      "Load more"
+                    )}
+                  </button>
+                </div>
+              )}
             </>
           )}
 

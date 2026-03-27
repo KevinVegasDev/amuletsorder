@@ -20,7 +20,7 @@ const Hero: React.FC<HeroProps> = ({
   ctaLink = "/market",
 }) => {
   return (
-    <section className="relative w-full h-[912px] overflow-hidden">
+    <section className="relative w-full h-[519px] sm:h-[912px] overflow-hidden">
       {/* Imagen de fondo */}
       <div className="absolute inset-0 w-full h-full">
         <Image
@@ -43,25 +43,19 @@ const Hero: React.FC<HeroProps> = ({
         />
       </div>
 
-      
       <div className="absolute inset-0 flex items-end justify-start">
         <div className="px-8 flex flex-col gap-4 py-16">
-          {/* Título principal - H1 para SEO */}
-          <h1 className="text-5xl font-bold text-gris leading-tight max-w-2xl">
+          <h1 className="text-[24px] sm:text-5xl font-extrabold sm:font-bold text-gris leading-tight max-w-2xl">
             {title}
           </h1>
 
-          
-          <p className="text-[32px]  text-gris  ">
-            {description}
-          </p>
+          <p className="text-[16px] sm:text-[32px] text-gris">{description}</p>
 
-          
           <div className="">
             <Link
               href={ctaLink}
               prefetch={true}
-              className="inline-block px-8  py-4 rounded-[12px] bg-gris text-black font-semibold hover:bg-gray-200 transition-colors duration-200 text-[20px]"
+              className="inline-block px-8  py-4 rounded-[12px] bg-blanco  transition-colors duration-200 md:text-[20px] text-[16px]/[19px]"
               aria-label={ctaText}
             >
               {ctaText}
