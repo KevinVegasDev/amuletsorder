@@ -21,7 +21,17 @@ export async function POST(request: NextRequest) {
       orderId: number; 
       amount: number; 
       email?: string; 
-      shippingAddress?: any; 
+      shippingAddress?: {
+        firstName: string;
+        lastName: string;
+        address: string;
+        apartment?: string;
+        city: string;
+        state: string;
+        zipCode: string;
+        country: string;
+        phone?: string;
+      }; 
     };
 
     if (!orderId || amount == null || amount <= 0) {
