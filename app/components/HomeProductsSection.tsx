@@ -90,7 +90,7 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
           ))}
         </div>
       ) : (
-        <div className="max-w-[1920px] mx-auto py-8 text-center text-gray-500 text-sm">
+        <div className="max-w-[1920px] mx-auto py-8 text-center text-sm">
           No categories available at the moment.
         </div>
       )}
