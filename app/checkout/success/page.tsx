@@ -45,6 +45,14 @@ function CheckoutSuccessContent() {
   const [error, setError] = useState<string | null>(null);
 
   // Limpiar URL: quitar params de Stripe (payment_intent, client_secret, redirect_status) para no dejar datos sensibles en la barra de direcciones
+  // Pero primero capturamos el redirect_status ANTES de limpiar la URL
+  const stripeRedirectStatus = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("redirect_status")
+    : null;
+  const stripePaymentIntent = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("payment_intent")
+    : null;
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -68,8 +76,27 @@ function CheckoutSuccessContent() {
       return;
     }
 
-    const verifyOrder = async () => {
+    const completeAndVerifyOrder = async () => {
       try {
+        // ✅ CRÍTICO: Si Stripe redirigió aquí con redirect_status=succeeded,
+        // actualizamos el pedido en WooCommerce a "processing" ANTES de mostrarlo.
+        // Esto dispara el envío a Printful sin depender del webhook del plugin de WooCommerce.
+        if (stripeRedirectStatus === "succeeded" && stripePaymentIntent) {
+          try {
+            await fetch("/api/checkout/complete-order", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId: Number(orderId),
+                paymentIntentId: stripePaymentIntent,
+              }),
+            });
+          } catch (completeErr) {
+            // No bloqueamos el flujo si falla — se seguirá intentando via webhook
+            console.error("[success] Could not complete order:", completeErr);
+          }
+        }
+
         const params = new URLSearchParams();
         params.set("order_id", orderId);
         if (orderKey) params.set("key", orderKey);
@@ -90,7 +117,8 @@ function CheckoutSuccessContent() {
       }
     };
 
-    verifyOrder();
+    completeAndVerifyOrder();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, orderKey]);
 
   // Vaciar carrito en cuanto el pedido esté verificado (ya pagaron y están en success)
