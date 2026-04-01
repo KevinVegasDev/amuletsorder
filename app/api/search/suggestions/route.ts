@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProducts } from "@/app/lib/wordpress-api";
 import { Product } from "@/app/types/product";
+import { unstable_cache } from "next/cache";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 interface CachedProduct {
   id: number;
@@ -11,44 +13,37 @@ interface CachedProduct {
   image: string;
 }
 
-// Global cache
-let _cachedProducts: CachedProduct[] | null = null;
-let _lastCacheTime = 0;
-const CACHE_TTL = 30 * 60 * 1000;
-
-async function getSearchIndex(): Promise<CachedProduct[]> {
-  const now = Date.now();
-  if (_cachedProducts && (now - _lastCacheTime) < CACHE_TTL) {
-    return _cachedProducts;
-  }
-
-  try {
-    const res = await getProducts(1, 100, {});
-    const products: Product[] = res.products;
-    
-    _cachedProducts = products.map(p => {
-      let imageUrl = "/placeholder-image.jpg";
-      if (p.images && p.images.length > 0) {
-        imageUrl = p.images[0].src;
-        if (imageUrl.includes("-150x150") || imageUrl.includes("-300x300")) {
-          imageUrl = imageUrl.replace(/-\d+x\d+/, "");
+// Data Fetch hiper-optimizado para Serverless (Vercel)
+// Cache persistente durante 1 hora (3600 segundos) para no saturar al hosting de WP
+const getSearchIndex = unstable_cache(
+  async (): Promise<CachedProduct[]> => {
+    try {
+      const res = await getProducts(1, 100, {});
+      const products: Product[] = res.products;
+      
+      return products.map(p => {
+        let imageUrl = "/placeholder-image.jpg";
+        if (p.images && p.images.length > 0) {
+          imageUrl = p.images[0].src;
+          if (imageUrl.includes("-150x150") || imageUrl.includes("-300x300")) {
+            imageUrl = imageUrl.replace(/-\d+x\d+/, "");
+          }
         }
-      }
-      return {
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        image: imageUrl
-      };
-    });
-    
-    _lastCacheTime = now;
-    return _cachedProducts;
-  } catch (e) {
-    console.error("Error building search index", e);
-    return _cachedProducts || [];
-  }
-}
+        return {
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          image: imageUrl
+        };
+      });
+    } catch (e) {
+      console.error("Error building search index", e);
+      return [];
+    }
+  },
+  ['global-search-index'],
+  { revalidate: 3600 } // 1 hora de caché absoluto
+);
 
 // Distancia Levenshtein para calcular qué tan parecidas son dos palabras
 function levenshtein(a: string, b: string): number {
@@ -84,7 +79,11 @@ function fuzzyMatch(query: string, text: string): number {
   for (const qw of qWords) {
     let bestDist = 1000;
     for (const tw of tWords) {
-      const dist = levenshtein(qw, tw);
+      // Comparar contra el prefijo exacto y un caracter más por si el usuario se comió una letra
+      const dist1 = levenshtein(qw, tw.substring(0, qw.length));
+      const dist2 = levenshtein(qw, tw.substring(0, qw.length + 1));
+      const dist = Math.min(dist1, dist2);
+      
       if (dist < bestDist) bestDist = dist;
     }
     totalScore += bestDist;
@@ -103,8 +102,9 @@ export async function GET(request: NextRequest) {
 
     const index = await getSearchIndex();
 
-    // Búsqueda aproximada "fuzzy" sin dependencias
-    const MAX_TOLERANCE_SCORE = q.length <= 4 ? 1 : 2; // tolerar 1 o 2 typos
+    // Mayor tolerancia al error (2 errores incluso en palabras de 4 letras)
+    // Esto asegura que "lgth" haga match correcto con "Lightweight".
+    const MAX_TOLERANCE_SCORE = Math.max(2, Math.floor(q.trim().length / 2));
 
     const results = index
       .map(item => {
