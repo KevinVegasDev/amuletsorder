@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getProducts } from "@/app/lib/wordpress-api";
+
 import { Product } from "@/app/types/product";
 import { unstable_cache } from "next/cache";
 
@@ -13,15 +13,32 @@ interface CachedProduct {
   image: string;
 }
 
+// Credenciales de WordPress para omitir llamadas recursivas a la propia API
+const WORDPRESS_API_URL = process.env.NEXT_PUBLIC_WORDPRESS_API_URL || process.env.WORDPRESS_API_URL || "https://headlessamulets.in/wp-json/wc/v3";
+const CONSUMER_KEY = process.env.WORDPRESS_CONSUMER_KEY || "";
+const CONSUMER_SECRET = process.env.WORDPRESS_CONSUMER_SECRET || "";
+
 // Data Fetch hiper-optimizado para Serverless (Vercel)
-// Cache persistente durante 1 hora (3600 segundos) para no saturar al hosting de WP
 const getSearchIndex = unstable_cache(
   async (): Promise<CachedProduct[]> => {
     try {
-      const res = await getProducts(1, 100, {});
-      const products: Product[] = res.products;
+      const auth = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString("base64");
+      const url = `${WORDPRESS_API_URL}/products?page=1&per_page=100&status=publish`;
       
-      return products.map(p => {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`WordPress API returned ${response.status}`);
+      }
+
+      const wpProducts = await response.json();
+      
+      return wpProducts.map((p: any) => {
         let imageUrl = "/placeholder-image.jpg";
         if (p.images && p.images.length > 0) {
           imageUrl = p.images[0].src;
@@ -37,12 +54,12 @@ const getSearchIndex = unstable_cache(
         };
       });
     } catch (e) {
-      console.error("Error building search index", e);
+      console.error("Error building search index direct to WP:", e);
       return [];
     }
   },
-  ['global-search-index'],
-  { revalidate: 3600 } // 1 hora de caché absoluto
+  ['global-search-index-direct'],
+  { revalidate: 3600 } 
 );
 
 // Distancia Levenshtein para calcular qué tan parecidas son dos palabras
