@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
-import { Product } from "@/app/types/product";
 import { unstable_cache } from "next/cache";
 
 export const runtime = "nodejs";
@@ -38,7 +36,7 @@ const getSearchIndex = unstable_cache(
 
       const wpProducts = await response.json();
       
-      return wpProducts.map((p: any) => {
+      return wpProducts.map((p: { id: number; name: string; slug: string; images?: Array<{ src: string }> }) => {
         let imageUrl = "/placeholder-image.jpg";
         if (p.images && p.images.length > 0) {
           imageUrl = p.images[0].src;
