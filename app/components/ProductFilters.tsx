@@ -78,7 +78,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   const searchParams = useSearchParams();
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    categories: false,
+    categories: filters.categories ? filters.categories.length > 0 : false,
     price: true,
     features: false,
   });
@@ -92,11 +92,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Obtener categorías activas desde la URL para sincronización
-  const getActiveCategoriesFromURL = (): string[] => {
-    const categoryFromURL = searchParams.get("category");
-    return categoryFromURL ? [categoryFromURL] : [];
-  };
+
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -277,8 +273,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
         >
           <div className="space-y-3">
             {categories.map((category) => {
-              const activeCategoriesFromURL = getActiveCategoriesFromURL();
-              const isChecked = activeCategoriesFromURL.includes(category.slug);
+              const isChecked = filters.categories ? filters.categories.includes(category.slug) : false;
 
               return (
                 <label

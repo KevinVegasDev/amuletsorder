@@ -26,7 +26,7 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
       {displayCollections.map((collection) => (
         <div
           key={collection.id}
-          className="min-h-[456px] max-h-[456px] md:min-h-[600px] md:max-h-none relative overflow-hidden group w-full"
+          className="min-h-[456px] max-h-[456px] md:min-h-[920px] relative overflow-hidden group w-full"
         >
           {/* Imagen de fondo */}
           {collection.imageUrl && (
@@ -35,7 +35,7 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
                 src={collection.imageUrl}
                 alt={collection.imageAlt || collection.title}
                 fill
-                sizes="1200px"
+                sizes="1500px"
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
             </div>

@@ -44,6 +44,7 @@ const Hero: React.FC<HeroProps> = ({
       </div>
 
       <div className="absolute inset-0 flex items-end justify-start">
+        <div className="w-full max-w-[1920px] mx-auto">
         <div className="px-8 flex flex-col gap-4 py-16">
           <h1 className="text-[24px] sm:text-5xl font-extrabold sm:font-bold text-gris leading-tight max-w-2xl">
             {title}
@@ -60,6 +61,7 @@ const Hero: React.FC<HeroProps> = ({
             >
               {ctaText}
             </Link>
+          </div>
           </div>
         </div>
       </div>

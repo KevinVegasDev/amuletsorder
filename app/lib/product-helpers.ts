@@ -143,23 +143,23 @@ export function getCategoriesWithProducts(
 }
 
 /**
- * Filtrar categorías que tienen productos con etiqueta HOME
+ * Filtrar categorías que tienen productos con etiqueta category-home
  */
 export function getHomeCategories(
   categories: ProductCategory[],
   productsByCategory: Record<string, Product[]>,
   products: Product[],
 ): ProductCategory[] {
-  // Obtener IDs de productos con tag "home"
+  // Obtener IDs de productos con tag "category-home"
   const homeProductIds = new Set(
     products
       .filter((product) =>
-        product.tags?.some((tag) => tag.slug.toLowerCase() === "home"),
+        product.tags?.some((tag) => tag.slug.toLowerCase() === "category-home"),
       )
       .map((product) => product.id),
   );
 
-  // Filtrar categorías que tienen al menos un producto con tag "home"
+  // Filtrar categorías que tienen al menos un producto con tag "category-home"
   return categories.filter((category) => {
     const categoryProducts = productsByCategory[category.slug] || [];
     return categoryProducts.some((product) => homeProductIds.has(product.id));
@@ -167,7 +167,7 @@ export function getHomeCategories(
 }
 
 /**
- * Obtener imágenes para cada categoría (primera imagen del primer producto)
+ * Obtener imágenes para cada categoría (producto que tenga la etiqueta "category-home")
  * Mejora la calidad de la imagen removiendo dimensiones pequeñas de la URL
  */
 export function getCategoryImages(
@@ -179,11 +179,18 @@ export function getCategoryImages(
   categories.forEach((category) => {
     const categoryProducts = productsByCategory[category.slug] || [];
 
-    // Obtener la primera imagen del primer producto de la categoría
+    // Obtener la imagen del producto con etiqueta "category-home"
     if (categoryProducts.length > 0) {
-      const firstProduct = categoryProducts[0];
-      if (firstProduct.images && firstProduct.images.length > 0) {
-        let imageUrl = firstProduct.images[0].src;
+      const targetProduct = categoryProducts.find((product) =>
+        product.tags?.some((tag) => tag.slug.toLowerCase() === "category-home"),
+      );
+
+      if (
+        targetProduct &&
+        targetProduct.images &&
+        targetProduct.images.length > 0
+      ) {
+        let imageUrl = targetProduct.images[0].src;
 
         // Mejorar calidad: remover dimensiones pequeñas de la URL para obtener imagen original
         // WordPress/WooCommerce a menudo agrega dimensiones como -150x150, -300x300, etc.

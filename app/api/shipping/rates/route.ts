@@ -110,22 +110,38 @@ async function getVariantIdFromSyncProduct(
           v.external_id === externalIdStr || v.external_id === String(wcProductOrVariationId)
       );
       if (match) {
+        // ONLY use variant_id (Printful catalog ID, small number like 4011).
+        // NEVER fall back to .id — that is the Sync Variant ID (large number like 5166537160)
+        // which Printful REJECTS in the shipping rates / orders API.
         const vid =
-          typeof match.variant_id === "number"
+          typeof match.variant_id === "number" && match.variant_id > 0
             ? match.variant_id
-            : typeof match.id === "number"
-            ? match.id
             : null;
         if (vid != null) return vid;
+        // If this matched variant has no catalog variant_id (product not fully synced),
+        // fall through to try other variants instead of returning wrong sync ID.
+        console.warn(
+          `[shipping/rates] Sync variant external_id=${externalIdStr} has no catalog variant_id (likely not fully synced in Printful). Trying first synced variant.`
+        );
       }
     }
 
-    const first = variants[0];
-    return typeof first.variant_id === "number"
-      ? first.variant_id
-      : typeof first.id === "number"
-      ? first.id
-      : null;
+    // Fall back to the first variant that has a valid catalog variant_id (> 0).
+    // Skip variants with no catalog variant_id (unsynced) — never use .id as a fallback.
+    const synced = variants.find(
+      (v: { variant_id?: number }) =>
+        typeof v.variant_id === "number" && v.variant_id > 0
+    );
+    if (synced) {
+      console.warn(
+        `[shipping/rates] Using first synced variant_id=${synced.variant_id} for sync product ${syncProductId} as fallback.`
+      );
+      return synced.variant_id as number;
+    }
+    console.error(
+      `[shipping/rates] Sync product ${syncProductId} has no variants with a valid catalog variant_id. Product may not be fully synced in Printful.`
+    );
+    return null;
   } catch {
     return null;
   }
@@ -437,7 +453,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Sin tarifas: token ausente, ningún item con variant_id, o dirección incompleta
+    // Sin tarifas de Printful: token ausente, ningún item con variant_id, o dirección incompleta.
+    // Para productos manuales (sin Printful), devolver un método de envío estándar como fallback.
+    const hasPrintfulItems = cartItems?.some(
+      (item) =>
+        typeof item.printfulSyncProductId === "number" ||
+        typeof item.printfulVariantId === "number"
+    );
+
+    if (!hasPrintfulItems && cartItems?.length > 0) {
+      // Productos manuales: ofrecer métodos de envío genéricos para no bloquear el checkout
+      const fallbackRates = [
+        {
+          id: "standard_shipping",
+          name: "Standard Shipping",
+          description: "5-7 business days",
+          price: 5.99,
+          estimatedDays: "5-7",
+        },
+        {
+          id: "express_shipping",
+          name: "Express Shipping",
+          description: "2-3 business days",
+          price: 14.99,
+          estimatedDays: "2-3",
+        },
+      ];
+      return NextResponse.json({ rates: fallbackRates, fromPrintful: false });
+    }
+
     const debug =
       process.env.NODE_ENV === "development"
         ? {

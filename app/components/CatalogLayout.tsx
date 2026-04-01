@@ -208,8 +208,8 @@ const CatalogLayout: React.FC<CatalogLayoutProps> = ({
 
     const query = params.toString();
     const newURL = query ? `${basePath}?${query}` : basePath;
-    router.replace(newURL, { scroll: false });
-  }, [router]);
+    window.history.pushState(null, '', newURL);
+  }, []);
 
   // Manejar cambios en filtros
   const handleFiltersChange = (newFilters: ProductFiltersType) => {

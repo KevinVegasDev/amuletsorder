@@ -11,8 +11,8 @@ interface TrendingProps {
 }
 
 const Trending: React.FC<TrendingProps> = ({ className = "", products }) => {
-  // Solo mostrar los primeros 3 productos (índices 0, 1, 2)
-  const displayProducts = products.slice(0, 3);
+  // Mostrar todos los productos con etiqueta trending
+  const displayProducts = products;
 
   if (displayProducts.length === 0) {
     return null;
@@ -28,7 +28,7 @@ const Trending: React.FC<TrendingProps> = ({ className = "", products }) => {
       {/* Div 2: Grid de imágenes */}
       <div className="flex flex-col md:flex-row md:px-[50px] px-4 gap-[16px]">
         {displayProducts.map((product) => {
-          const primaryImage = product.images[0];
+          const lastImage = product.images[product.images.length - 1];
 
           return (
             <div
@@ -40,11 +40,11 @@ const Trending: React.FC<TrendingProps> = ({ className = "", products }) => {
                 href={`/market/product/${product.slug}`}
                 className="group/image block w-full h-full"
               >
-                {primaryImage ? (
+                {lastImage ? (
                   <div className="relative w-full overflow-hidden rounded-2xl h-[303px] md:h-[941px]">
                     <Image
-                      src={primaryImage.src}
-                      alt={primaryImage.alt || product.name}
+                      src={lastImage.src}
+                      alt={lastImage.alt || product.name}
                       fill
                       className="object-cover rounded-2xl transition-transform duration-300 "
                       sizes="(max-width: 768px) 500px, 1500px"
