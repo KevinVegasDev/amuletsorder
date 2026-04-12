@@ -81,9 +81,9 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-          <h2 className="text-xl sm:text-2xl font-bold text-negro">
+          <span className="text-xl sm:text-2xl font-bold text-negro">
             Shopping Cart
-          </h2>
+          </span>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
@@ -113,9 +113,9 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <span className="text-xl font-semibold text-gray-900 mb-2 block">
                 Your cart is empty
-              </h3>
+              </span>
               <p className="text-gray-500 mb-6">
                 Add products to start shopping
               </p>
@@ -166,9 +166,9 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
 
                     {/* Información del producto */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">
+                      <span className="font-medium text-gray-900 mb-1 line-clamp-2 block">
                         {item.product.name}
-                      </h3>
+                      </span>
                       <p className="text-sm text-gray-500 mb-2">
                         {formatPrice(item.product.price)}
                       </p>

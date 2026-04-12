@@ -26,7 +26,7 @@ const HomeCategoryCard: React.FC<HomeCategoryCardProps> = ({
             alt={category.name}
             fill
             sizes="800px"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover "
           />
         </div>
       )}
@@ -36,9 +36,9 @@ const HomeCategoryCard: React.FC<HomeCategoryCardProps> = ({
 
       {/* Título de la categoría - arriba a la izquierda */}
       <div className="absolute top-0 left-0 p-4 z-10">
-        <h3 className="text-white text-[24px] font-semibold">
+        <span className="text-white text-[24px] font-semibold block">
           {category.name}
-        </h3>
+        </span>
       </div>
     </Link>
   );

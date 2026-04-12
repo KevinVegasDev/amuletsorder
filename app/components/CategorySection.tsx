@@ -25,9 +25,9 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     <section className="py-12 px-[50px] max-w-[1440px] mx-auto">
       {/* Header de la categoría */}
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-4xl font-bold text-black uppercase tracking-tight">
+        <span className="text-4xl font-bold text-black uppercase tracking-tight">
           {category.name}
-        </h2>
+        </span>
         <Link
           href={`/market/category/${category.slug}`}
           className="flex items-center gap-2 text-black hover:text-gray-600 transition-colors duration-200 group"

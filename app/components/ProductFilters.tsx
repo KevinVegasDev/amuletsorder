@@ -35,7 +35,7 @@ const AccordionSection: React.FC<AccordionSectionProps> = ({
       aria-expanded={isOpen}
       id={`accordion-${id}`}
     >
-      <h3 className="text-base font-medium text-negro">{title}</h3>
+      <span className="text-base font-medium text-negro block">{title}</span>
       <svg
         className={`w-5 h-5 text-negro shrink-0 transition-transform duration-300 ease-in-out ${isOpen ? "rotate-180" : "rotate-0"}`}
         fill="none"
@@ -225,7 +225,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
     <div className={`py-8 px-6 rounded-2xl border border-negro flex flex-col ${className}`}>
       {/* Título */}
       <div className="mb-4">
-        <h2 className="text-2xl font-semibold text-negro">Filters</h2>
+        <span className="text-2xl font-semibold text-negro">Filters</span>
       </div>
 
       {/* Secciones de filtros */}

@@ -13,7 +13,7 @@ import { ShippingFormStripe } from "../components/Checkout/ShippingFormStripe";
 import { StripePaymentForm } from "../components/Checkout/StripePaymentForm";
 
 const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
 );
 
 /**
@@ -58,9 +58,9 @@ export const CheckoutClient: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-negro mb-4">
+          <span className="text-2xl font-bold text-negro mb-4">
             Your cart is empty
-          </h1>
+          </span>
           <p className="text-gray-600 mb-6">
             Add some items to your cart before checkout
           </p>
@@ -106,13 +106,13 @@ export const CheckoutClient: React.FC = () => {
               {/* Paso 1: Review o formulario de pago Stripe */}
               {currentStep === 1 && !paymentSession && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-bold text-negro">Order Review</h2>
+                  <span className="text-xl font-bold text-negro block">Order Review</span>
 
                   {/* Resumen de envío */}
                   <div className="border-t border-gray-200 pt-6">
-                    <h3 className="text-lg font-semibold text-negro mb-4">
+                    <span className="text-lg font-semibold text-negro mb-4 block">
                       Shipping Address
-                    </h3>
+                    </span>
                     <div className="text-sm text-gray-700 space-y-1">
                       <p className="font-medium">
                         {formData.shippingAddress.firstName}{" "}
@@ -135,11 +135,13 @@ export const CheckoutClient: React.FC = () => {
 
                   {/* Método de envío */}
                   <div className="border-t border-gray-200 pt-6">
-                    <h3 className="text-lg font-semibold text-negro mb-4">
+                    <span className="text-lg font-semibold text-negro mb-4 block">
                       Shipping Method
-                    </h3>
+                    </span>
                     <div className="text-sm text-gray-700">
-                      <p className="font-medium">{selectedShippingMethod?.name ?? "—"}</p>
+                      <p className="font-medium">
+                        {selectedShippingMethod?.name ?? "—"}
+                      </p>
                       <p>{selectedShippingMethod?.description ?? ""}</p>
                     </div>
                   </div>
@@ -149,7 +151,7 @@ export const CheckoutClient: React.FC = () => {
               {/* Formulario de pago Stripe (mismo paso Review, sin salir de la página) */}
               {currentStep === 1 && paymentSession && (
                 <div className="space-y-6">
-                  <h2 className="text-xl font-bold text-negro">Payment</h2>
+                  <span className="text-xl font-bold text-negro block">Payment</span>
                   <p className="text-sm text-gray-600">
                     Complete your order securely with your card.
                   </p>
@@ -169,7 +171,7 @@ export const CheckoutClient: React.FC = () => {
                       orderKey={paymentSession.orderKey}
                       onSuccess={(orderId, orderKey) => {
                         router.push(
-                          `/checkout/success?order_id=${orderId}&key=${encodeURIComponent(orderKey)}`
+                          `/checkout/success?order_id=${orderId}&key=${encodeURIComponent(orderKey)}`,
                         );
                       }}
                       onError={(message) => showToast(message, "error", 5000)}
@@ -294,4 +296,3 @@ export const CheckoutClient: React.FC = () => {
     </div>
   );
 };
-

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { CartIcon, HeartHeaderIcon } from "./icons";
@@ -8,19 +8,40 @@ import { useCart } from "../contexts/CartContext";
 import { useWishlist } from "../contexts/WishlistContext";
 import CartSidebar from "./CartSidebar";
 import WishlistDropdown from "./WishlistDropdown";
+import MoreDropdownPanel from "./MoreDropdownPanel";
 
-const Header = () => {
+interface HeaderProps {
+  announcementMessage?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ 
+  announcementMessage 
+}) => {
   const { getCartItemCount } = useCart();
   const { getWishlistItemCount } = useWishlist();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [alignLeft, setAlignLeft] = useState(0);
+  const navRef = useRef<HTMLDivElement>(null);
 
   const cartItemCount = getCartItemCount();
   const wishlistItemCount = getWishlistItemCount();
 
-  // Mensaje de la barra de anuncios
-  const announcementMessage = "Free shipping on orders over $50";
+  const updateAlignLeft = useCallback(() => {
+    if (navRef.current) {
+      setAlignLeft(navRef.current.getBoundingClientRect().left);
+    }
+  }, []);
+
+  useEffect(() => {
+    updateAlignLeft();
+    window.addEventListener("resize", updateAlignLeft);
+    return () => window.removeEventListener("resize", updateAlignLeft);
+  }, [updateAlignLeft]);
+
+  // Mensaje de la barra de anuncios (se recibe por prop o usa default inline arriba)
 
   return (
     <>
@@ -35,7 +56,7 @@ const Header = () => {
           {/* ===== DESKTOP HEADER ===== */}
           <div className="hidden sm:flex items-center justify-around">
             {/* Logo y Navegación */}
-            <div className="flex items-center gap-8">
+            <div ref={navRef} className="flex items-center gap-8">
               {/* Logo */}
               <div>
                 <Link href="/" prefetch={true}>
@@ -65,13 +86,15 @@ const Header = () => {
                 >
                   Market
                 </Link>
-                <Link
-                  href="/about-us"
-                  prefetch={true}
-                  className="px-4 py-2 text-black"
+                <div
+                  className="relative"
+                  onMouseEnter={() => setIsMoreOpen(true)}
+                  onMouseLeave={() => setIsMoreOpen(false)}
                 >
-                  about us
-                </Link>
+                  <span className="px-4 py-2 text-black uppercase cursor-pointer">
+                    More
+                  </span>
+                </div>
               </nav>
             </div>
 
@@ -195,6 +218,13 @@ const Header = () => {
             </div>
           </div>
         </header>
+
+        <MoreDropdownPanel
+          isOpen={isMoreOpen}
+          alignLeft={alignLeft}
+          onMouseEnter={() => setIsMoreOpen(true)}
+          onMouseLeave={() => setIsMoreOpen(false)}
+        />
       </div>
 
       {/* ===== MOBILE MENU BACKDROP ===== */}
@@ -263,15 +293,81 @@ const Header = () => {
             >
               Market
             </Link>
-            <Link
-              href="/about-us"
-              prefetch={true}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="text-[24px] uppercase text-black font-medium"
-            >
-              About us
-            </Link>
           </nav>
+
+          {/* More section */}
+          <div className="flex flex-col items-end gap-6 border-t border-[#212121]/15 pt-6 w-full">
+            <span className="text-[20px] uppercase text-black font-medium">More</span>
+
+            {/* Customer Support */}
+            <div className="flex flex-col items-end gap-3">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Customer Support</span>
+              <div className="flex flex-col items-end gap-2">
+                <Link
+                  href="/contact"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm uppercase text-black font-medium"
+                >
+                  Contact Us
+                </Link>
+                <Link
+                  href="/shipping"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm uppercase text-black font-medium"
+                >
+                  Shipping
+                </Link>
+                <Link
+                  href="/returns"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm uppercase text-black font-medium"
+                >
+                  Returns
+                </Link>
+              </div>
+            </div>
+
+            {/* Links */}
+            <div className="flex flex-col items-end gap-3">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">Links</span>
+              <div className="flex flex-col items-end gap-2">
+                <Link
+                  href="/about-us"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm uppercase text-black font-medium"
+                >
+                  About
+                </Link>
+                <a
+                  href="https://instagram.com/amuletsorder"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm uppercase text-black font-medium"
+                >
+                  Instagram
+                </a>
+                <a
+                  href="https://youtube.com/@amuletsorder"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm uppercase text-black font-medium"
+                >
+                  YouTube
+                </a>
+                <a
+                  href="https://tiktok.com/@amuletsorder"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-sm uppercase text-black font-medium"
+                >
+                  TikTok
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

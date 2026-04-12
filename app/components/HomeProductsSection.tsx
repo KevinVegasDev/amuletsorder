@@ -40,36 +40,36 @@ const HomeProductsSection: React.FC<HomeProductsSectionProps> = ({
   return (
     <section className={`py-4 px-4 md:px-[50px] rounded-2xl ${className}`}>
       <div className="flex flex-row justify-between items-center p-4 max-w-[1920px] mx-auto py-16">
-        <h2 className="text-[24px] sm:text-4xl font-bold text-black">
+        <span className="text-[24px] sm:text-4xl font-bold text-black">
           Shop by category
-        </h2>
+        </span>
 
         {/* Controles de scroll - solo visible en lg (≤1024px) */}
         <div className="flex flex-row gap-2">
           <button
             onClick={scrollLeft}
-            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center rounded-full bg-black cursor-pointer hover:opacity-70 transition-opacity"
             aria-label="Scroll left"
           >
             <Image
               src="/left-arrow.svg"
               alt="Left arrow"
-              width={64}
-              height={64}
-              className="w-full h-full"
+              width={28}
+              height={28}
+              className="w-[20px] h-[20px] md:w-[42px] md:h-[72px]"
             />
           </button>
           <button
             onClick={scrollRight}
-            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center rounded-full bg-black cursor-pointer hover:opacity-70 transition-opacity"
             aria-label="Scroll right"
           >
             <Image
               src="/right-arrow.svg"
               alt="Right arrow"
-              width={64}
-              height={64}
-              className="w-full h-full"
+              width={28}
+              height={28}
+              className="w-[20px] h-[20px] md:w-[42px] md:h-[72px]"
             />
           </button>
         </div>

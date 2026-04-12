@@ -36,7 +36,7 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
                 alt={collection.imageAlt || collection.title}
                 fill
                 sizes="1500px"
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                className="object-cover"
               />
             </div>
           )}
@@ -47,9 +47,9 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
           {/* Contenedor de texto y CTA */}
           <div className="absolute inset-0 z-10 flex flex-col md:py-[64px] py-[24px] px-[32px] gap-[16px] justify-end">
             {/* Título */}
-            <h2 className="md:text-[40px] text-[24px] font-extrabold text-white uppercase">
+            <span className="md:text-[40px] text-[24px] font-extrabold text-white uppercase">
               {collection.title}
-            </h2>
+            </span>
 
             {/* Descripción */}
             <p className="md:text-[32px] text-[20px] text-white">

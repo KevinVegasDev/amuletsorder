@@ -104,9 +104,9 @@ export default async function CollectionPage({ params }: CollectionPageProps) {
           {/* Header de la colección (fuera de Suspense, no usa useSearchParams) */}
           <div className="max-w-[1920px] mx-auto px-4 md:px-12 py-8">
             <div className="mb-6">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+              <span className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
                 {collection.title}
-              </h1>
+              </span>
               {collection.description && (
                 <p className="text-lg text-gray-600">{collection.description}</p>
               )}

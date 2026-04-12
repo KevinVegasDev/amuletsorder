@@ -48,7 +48,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-negro">Payment Information</h2>
+      <span className="text-xl font-bold text-negro">Payment Information</span>
 
       {/* Tipo de pago */}
       <div>

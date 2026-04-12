@@ -75,7 +75,7 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({
     >
       <div className="max-w-4xl mx-auto text-center">
         {title && (
-          <h3 className="text-2xl md:text-3xl font-bold mb-2">{title}</h3>
+          <span className="text-2xl md:text-3xl font-bold mb-2 block">{title}</span>
         )}
         {description && (
           <p className="text-sm md:text-base text-gray-300 mb-6">{description}</p>

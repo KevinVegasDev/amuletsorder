@@ -22,7 +22,7 @@ const Trending: React.FC<TrendingProps> = ({ className = "", products }) => {
     <section className={`max-w-[1920px] mx-auto flex flex-col ${className}`}>
       {/* Div 1: Título */}
       <div className="md:px-[50px] px-4 py-[64px]">
-        <h4 className="text-[32px] font-semibold text-black">Trending Wear</h4>
+        <span className="text-[32px] font-semibold text-black block">Trending Wear</span>
       </div>
 
       {/* Div 2: Grid de imágenes */}

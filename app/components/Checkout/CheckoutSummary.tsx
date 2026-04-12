@@ -47,7 +47,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
   return (
     <div className="lg:sticky lg:top-4 h-fit">
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-negro mb-6">Order Summary</h2>
+        <span className="text-xl font-bold text-negro mb-6">Order Summary</span>
 
         {/* Lista de productos con controles de cantidad */}
         <div className="space-y-4 mb-6 max-h-64 overflow-y-auto custom-scrollbar">

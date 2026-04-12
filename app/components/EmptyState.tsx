@@ -70,9 +70,9 @@ const EmptyState: React.FC<EmptyStateProps> = ({
       </div>
 
       {/* Título */}
-      <h3 className="text-xl font-semibold text-gray-900 mb-3">
+      <span className="text-xl font-semibold text-gray-900 mb-3 block">
         {title}
-      </h3>
+      </span>
 
       {/* Descripción */}
       <p className="text-gray-500 max-w-md mb-6 leading-relaxed">

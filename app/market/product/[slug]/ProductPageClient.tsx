@@ -45,20 +45,20 @@ export default function ProductPageClient({
 }: ProductPageClientProps) {
   const router = useRouter();
   const allImages = useMemo(() => {
-    const images: ProductImage[] = [...(product.images || [])];
-    if (product.variations?.length) {
-      product.variations.forEach((variation) => {
-        if (variation.image) {
-          const isDuplicate = images.some(
-            (img) =>
-              img.id === variation.image!.id || img.src === variation.image!.src
-          );
-          if (!isDuplicate) images.push(variation.image);
-        }
-      });
+    let images: ProductImage[] = [...(product.images || [])];
+    
+    // WooCommerce or Printful usually assigns the active images to product.images directly.
+    // We avoid injecting variation images automatically because it results in deleted or old variations showing up.
+
+    // LÓGICA SOLICITADA: Si es "Trending Wear" (tiene el tag 'trending'), la última imagen es exclusiva 
+    // del Homepage, por lo que la removemos de la galería de detalles para que no rompa el diseño.
+    const isTrending = product.tags?.some((t) => t.slug.toLowerCase().includes("trending"));
+    if (isTrending && images.length > 1) {
+      images = images.slice(0, -1);
     }
+
     return images;
-  }, [product.images, product.variations]);
+  }, [product.images, product.variations, product.tags]);
 
   const featuredImages = useMemo(() => {
     const filtered = allImages.filter(isFeaturedDetail);

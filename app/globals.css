@@ -214,3 +214,116 @@ body {
   overflow: hidden;
   min-height: 0;
 }
+
+/* WordPress HTML content styling for product tabs */
+.product-description p {
+  margin-bottom: 0.75rem;
+}
+
+.product-description p:last-child {
+  margin-bottom: 0;
+}
+
+.product-description ul,
+.product-description ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.product-description ul {
+  list-style-type: disc;
+}
+
+.product-description ol {
+  list-style-type: decimal;
+}
+
+.product-description li {
+  margin-bottom: 0.25rem;
+}
+
+.product-description a {
+  color: var(--color-negro);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.product-description a:hover {
+  opacity: 0.7;
+}
+
+.product-description strong,
+.product-description b {
+  font-weight: 700 !important;
+  color: #000;
+}
+
+.product-description em,
+.product-description i {
+  font-style: italic;
+}
+
+.product-description h1,
+.product-description h2,
+.product-description h3,
+.product-description h4,
+.product-description h5,
+.product-description h6 {
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.product-description br {
+  content: "";
+  display: block;
+  margin-top: 0.5rem;
+}
+
+/* Accordions from WordPress (native details/summary or basic nested) */
+.product-description details {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+  margin-bottom: 0.5rem;
+}
+
+.product-description summary {
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none; /* remove default triangle in some browsers */
+  position: relative;
+  display: block; /* crucial para que tome todo el ancho */
+  width: 100%;
+  padding-right: 1.5rem;
+  outline: none;
+}
+
+/* Custom arrow for summary */
+.product-description summary::-webkit-details-marker {
+  display: none;
+}
+
+.product-description summary::after {
+  content: '';
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid #000;
+  border-bottom: 1.5px solid #000;
+  transition: transform 0.2s ease-in-out;
+}
+
+.product-description details[open] summary::after {
+  transform: translateY(-50%) rotate(-135deg);
+}
+
+.product-description details p {
+  margin-top: 1rem;
+  color: #000;
+  font-size: 0.9rem;
+}
+
+

@@ -152,7 +152,7 @@ function CheckoutSuccessContent() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-negro mb-2">Order Verification Failed</h1>
+          <span className="text-2xl font-bold text-negro mb-2 block">Order Verification Failed</span>
           <p className="text-gray-600 mb-6">{error || "Order not found"}</p>
           <Link
             href="/market"
@@ -190,9 +190,9 @@ function CheckoutSuccessContent() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-negro mb-2">
+          <span className="text-2xl sm:text-3xl font-bold text-negro mb-2 block">
             Thank you for your purchase
-          </h1>
+          </span>
           <p className="text-gray-600 text-sm sm:text-base">
             We&apos;ve received your order and will ship in 5–7 business days.
           </p>
@@ -206,7 +206,7 @@ function CheckoutSuccessContent() {
 
         {/* Order Summary */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 text-left shadow-sm">
-          <h2 className="text-lg font-bold text-negro mb-4">Order Summary</h2>
+          <span className="text-lg font-bold text-negro mb-4 block">Order Summary</span>
           <ul className="space-y-4">
             {lineItems.length > 0 ? (
               lineItems.map((item) => (

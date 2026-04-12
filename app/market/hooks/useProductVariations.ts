@@ -59,7 +59,12 @@ export const useProductVariations = ({
       // Compare all selected attributes with variation attributes
       const matches = Object.keys(selectedAttributes).every((attrName) => {
         const selectedValue = selectedAttributes[attrName];
-        const variationValue = variation.attributes[attrName];
+
+        const targetAttrKey = attrName.toLowerCase();
+        const matchingKey = Object.keys(variation.attributes).find(
+          (k) => k.toLowerCase() === targetAttrKey
+        );
+        const variationValue = matchingKey ? variation.attributes[matchingKey] : undefined;
 
         // Case-insensitive and normalized comparison
         const normalizedSelected = selectedValue
@@ -181,11 +186,20 @@ export const useProductVariations = ({
         return attr?.options || [];
       }
 
+      // Helper function to safely get attribute value ignoring case
+      const getVariationAttrValue = (variation: ProductVariation, attrName: string) => {
+        const targetAttrKey = attrName.toLowerCase();
+        const matchingKey = Object.keys(variation.attributes).find(
+          (k) => k.toLowerCase() === targetAttrKey
+        );
+        return matchingKey ? variation.attributes[matchingKey] : undefined;
+      };
+
       // If no attributes selected, show all available options in variations
       if (Object.keys(selectedAttributes).length === 0) {
         const availableOptions = new Set<string>();
         product.variations.forEach((variation) => {
-          const value = variation.attributes[attributeName];
+          const value = getVariationAttrValue(variation, attributeName);
           if (value) {
             availableOptions.add(value);
           }
@@ -208,7 +222,7 @@ export const useProductVariations = ({
             const selectedValue = selectedAttributes[selectedAttrName]
               ?.toLowerCase()
               .trim();
-            const variationValue = variation.attributes[selectedAttrName]
+            const variationValue = getVariationAttrValue(variation, selectedAttrName)
               ?.toLowerCase()
               .trim();
             return selectedValue === variationValue;
@@ -216,7 +230,7 @@ export const useProductVariations = ({
         );
 
         if (isCompatible) {
-          const value = variation.attributes[attributeName];
+          const value = getVariationAttrValue(variation, attributeName);
           if (value) {
             availableOptions.add(value);
           }

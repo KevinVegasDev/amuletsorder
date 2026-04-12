@@ -17,6 +17,7 @@ interface UseProductActionsReturn {
   isAddingToCart: boolean;
   isBuyingNow: boolean;
   isLiked: boolean;
+  missingAttributes: string[];
   handleAddToCart: () => Promise<void>;
   handleBuyNow: () => Promise<void>;
   handleToggleWishlist: () => void;
@@ -38,6 +39,8 @@ export const useProductActions = ({
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { showToast } = useToast();
+
+  const [missingAttributes, setMissingAttributes] = useState<string[]>([]);
 
   const isLiked = isInWishlist(product.id);
 
@@ -68,15 +71,45 @@ export const useProductActions = ({
    * Validate that all required attributes are selected
    */
   const validateAttributes = (): boolean => {
+    let missing: string[] = [];
+
+    // Validation for normal Variable products
     if (product.attributes && product.attributes.length > 0) {
-      const missingAttributes = product.attributes.filter(
-        (attr) => !selectedAttributes[attr.name]
-      );
-      if (missingAttributes.length > 0) {
-        showToast("Please select all required options", "error", 3000);
-        return false;
+      missing = product.attributes
+        .filter((attr) => !selectedAttributes[attr.name])
+        .map((attr) => attr.name);
+    } else {
+      // Validation for Simple products (Static Fallbacks)
+      if (!selectedAttributes["Talla"] && !selectedAttributes["Size"]) {
+        missing.push("Talla");
+      }
+      if (!selectedAttributes["Color"]) {
+        missing.push("Color");
       }
     }
+
+    if (missing.length > 0) {
+      setMissingAttributes(missing);
+      
+      const isSizeMissing = missing.some(m => m.toLowerCase().includes("talla") || m.toLowerCase().includes("size"));
+      const isColorMissing = missing.some(m => m.toLowerCase().includes("color"));
+
+      if (isSizeMissing && isColorMissing) {
+        showToast("You must select a size and color", "error", 3000);
+      } else if (isSizeMissing) {
+        showToast("You must select a size", "error", 3000);
+      } else if (isColorMissing) {
+        showToast("You must select a color", "error", 3000);
+      } else {
+        showToast(`You must select: ${missing.join(', ')}`, "error", 3000);
+      }
+
+      // Quitar la animación después de 1.2 segundos
+      setTimeout(() => setMissingAttributes([]), 1200);
+      return false;
+    }
+
+    setMissingAttributes([]);
     return true;
   };
 
@@ -146,6 +179,7 @@ export const useProductActions = ({
     isAddingToCart,
     isBuyingNow,
     isLiked,
+    missingAttributes,
     handleAddToCart,
     handleBuyNow,
     handleToggleWishlist,

@@ -64,7 +64,6 @@ export default async function Home() {
 
       {/* Countdown Timer para próxima colección */}
 
-
       {/* Sección de Categorías HOME */}
       <HomeProductsSection
         categories={productsData.homeCategories}

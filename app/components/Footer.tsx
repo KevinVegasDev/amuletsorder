@@ -64,9 +64,9 @@ const Footer = () => {
           <div className="flex flex-row justify-between md:gap-40">
             {/* Categorías */}
             <div className="flex flex-col">
-              <h4 className="text-[16px] font-light text-white md:hidden mb-[40px]">
+              <span className="text-[16px] font-light text-white md:hidden mb-[40px] block">
                 Category
-              </h4>
+              </span>
               <ul className="flex flex-col gap-[40px] md:gap-0">
                 {categoryLinks.map((link) => (
                   <li key={link.href}>
@@ -83,9 +83,9 @@ const Footer = () => {
 
             {/* About us */}
             <div className="flex flex-col">
-              <h4 className="text-[16px] font-light text-white md:hidden mb-[40px]">
+              <span className="text-[16px] font-light text-white md:hidden mb-[40px] block">
                 About us
-              </h4>
+              </span>
               <ul className="flex flex-col gap-[40px] md:gap-0">
                 {aboutLinks.map((link) => (
                   <li key={link.href}>

@@ -6,7 +6,8 @@ import React, { useMemo } from "react";
 import { Product } from "../../types/product";
 import { useProductVariations } from "../../market/hooks/useProductVariations";
 import { useProductActions } from "../../market/hooks/useProductActions";
-import { cleanHtml, formatPrice, isColorAttribute } from "../../market/utils/productUtils";
+import { formatPrice, isColorAttribute } from "../../market/utils/productUtils";
+import ProductInfoTabs from "./ProductInfoTabs";
 import { ProductAttributes } from "./ProductAttributes";
 import { StaticAttributes } from "./StaticAttributes";
 import { ProductActions } from "./ProductActions";
@@ -32,6 +33,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
     isAddingToCart,
     isBuyingNow,
     isLiked,
+    missingAttributes,
     handleAddToCart,
     handleBuyNow,
     handleToggleWishlist,
@@ -46,9 +48,34 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
   const breadcrumbText = categoryNames.length ? categoryNames.join(" | ") : "";
   const categoryLabel = product.categories?.[0]?.name ?? "";
 
-  const sizeAttributes = product.attributes?.filter((a) => !isColorAttribute(a.name)) ?? [];
-  const colorAttributes = product.attributes?.filter((a) => isColorAttribute(a.name)) ?? [];
-  const hasColor = colorAttributes.length > 0 || !product.attributes?.length;
+  // Filtrar las opciones para que solo se muestren las que realmente tienen una variación existente
+  const filteredAttributes = useMemo(() => {
+    const baseAttributes = product.attributes ?? [];
+    if (!product.variations || product.variations.length === 0) {
+      return baseAttributes;
+    }
+
+    return baseAttributes.map(attr => {
+      const validOptions = new Set<string>();
+      const targetAttrKey = attr.name.toLowerCase();
+      
+      product.variations!.forEach(v => {
+        const matchingKey = Object.keys(v.attributes).find(k => k.toLowerCase() === targetAttrKey);
+        if (matchingKey && v.attributes[matchingKey]) {
+          validOptions.add(v.attributes[matchingKey].toLowerCase().trim());
+        }
+      });
+
+      return {
+        ...attr,
+        options: attr.options.filter(opt => validOptions.has(opt.toLowerCase().trim()))
+      };
+    }).filter(attr => attr.options.length > 0);
+  }, [product.attributes, product.variations]);
+
+  const sizeAttributes = filteredAttributes.filter((a) => !isColorAttribute(a.name));
+  const colorAttributes = filteredAttributes.filter((a) => isColorAttribute(a.name));
+  const hasColor = colorAttributes.length > 0 || !filteredAttributes.length;
 
   // Imagen de swatch por valor de color: se obtiene de la variación en WooCommerce.
   // Así no hay que mapear colores a mano; si la variación tiene imagen, la usamos.
@@ -58,9 +85,18 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
     colorAttributes.forEach((attr) => {
       attr.options.forEach((optionValue) => {
         if (map[optionValue]) return;
-        const variation = variations.find(
-          (v) => v.attributes[attr.name] === optionValue && v.image?.src
-        );
+        const targetAttrKey = attr.name.toLowerCase();
+        const targetOptionValue = optionValue.toLowerCase().trim();
+
+        const variation = variations.find((v) => {
+          if (!v.image?.src) return false;
+          const matchingKey = Object.keys(v.attributes).find(
+            (k) => k.toLowerCase() === targetAttrKey
+          );
+          if (!matchingKey) return false;
+          return v.attributes[matchingKey].toLowerCase().trim() === targetOptionValue;
+        });
+
         if (variation?.image?.src) map[optionValue] = variation.image.src;
       });
     });
@@ -69,16 +105,10 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Bloque 1: migas de pan, nombre/categoría, precio, talla, color */}
+      {/* Bloque 1: nombre/categoría, precio, talla, color */}
       <div className="flex flex-col">
-        <div className="flex flex-row gap-4 py-4">
-          {breadcrumbText && (
-            <span className="text-sm text-gray-500">{breadcrumbText}</span>
-          )}
-        </div>
-
         <div className="flex py-4 flex-col gap-2">
-          <h1 className="text-2xl font-medium text-negro">{product.name}</h1>
+          <span className="text-2xl font-medium text-negro">{product.name}</span>
           {categoryLabel && (
             <p className="text-sm font-light text-gray-600">{categoryLabel}</p>
           )}
@@ -109,6 +139,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
               onAttributeChange={handleAttributeChange}
               sizeButtonClassName="px-[34px] py-[18px] border border-negro rounded-[12px]"
               hideLabel
+              missingAttributes={missingAttributes}
             />
           ) : (
             <StaticAttributes
@@ -116,6 +147,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
               onAttributeChange={handleAttributeChange}
               showColor={false}
               sizeButtonClassName="px-[34px] py-[18px] border border-negro rounded-[12px]"
+              missingAttributes={missingAttributes}
             />
           )}
         </div>
@@ -133,12 +165,14 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
                   onAttributeChange={handleAttributeChange}
                   hideLabel
                   colorSwatchImages={colorSwatchImages}
+                  missingAttributes={missingAttributes}
                 />
               ) : (
                 <StaticAttributes
                   selectedAttributes={selectedAttributes}
                   onAttributeChange={handleAttributeChange}
                   showSize={false}
+                  missingAttributes={missingAttributes}
                 />
               )}
             </div>
@@ -159,15 +193,12 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
         />
       </div>
 
-      {/* Bloque 3: descripción */}
-      <div className="py-6 border-b border-t border-[#212121]/25">
-        <p className="text-sm text-gray-600 leading-relaxed">
-          {cleanHtml(
-            product.description ||
-            product.shortDescription ||
-            "No description available."
-          )}
-        </p>
+      {/* Bloque 3: Description / Shipping / Returns tabs */}
+      <div className="border-t border-[#212121]/25">
+        <ProductInfoTabs
+          description={product.description}
+          shortDescription={product.shortDescription}
+        />
       </div>
     </div>
   );

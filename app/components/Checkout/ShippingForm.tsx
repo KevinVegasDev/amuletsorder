@@ -33,7 +33,7 @@ export const ShippingForm: React.FC<ShippingFormProps> = ({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-negro">Shipping Information</h2>
+      <span className="text-xl font-bold text-negro">Shipping Information</span>
 
       {/* Email y Teléfono */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -310,9 +310,9 @@ export const ShippingForm: React.FC<ShippingFormProps> = ({
 
       {/* Métodos de envío */}
       <div className="pt-4 border-t border-gray-200">
-        <h3 className="text-lg font-semibold text-negro mb-4">
+        <span className="text-lg font-semibold text-negro mb-4 block">
           Shipping Method
-        </h3>
+        </span>
         <div className="space-y-3">
           {shippingMethods.map((method) => (
             <label

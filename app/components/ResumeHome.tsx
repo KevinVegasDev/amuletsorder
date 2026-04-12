@@ -15,7 +15,7 @@ const ResumeHome = () => {
         />
       </div>
       <div className="w-full md:w-1/2 flex flex-col justify-center rounded-3xl bg-gris p-8 md:p-16">
-        <h4 className="text-[48px] font-medium text-negro"></h4>
+        <span className="text-[48px] font-medium text-negro block"></span>
         <p className="text-[20px]  text-negro ">
           This is your amulet, your identity. A signal recognized by those who
           see beyond the surface. <br />

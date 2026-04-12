@@ -97,7 +97,7 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({
               alt={image.alt || `Product image ${index + 1}`}
               width={641}
               height={641}
-              className="object-contain w-full h-full"
+              className="object-cover w-full h-full"
               sizes="(max-width: 768px) 100vw, 800px"
             />
           </div>

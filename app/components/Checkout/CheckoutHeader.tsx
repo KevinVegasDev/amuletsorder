@@ -12,11 +12,11 @@ interface CheckoutHeaderProps {
  */
 export const CheckoutHeader: React.FC<CheckoutHeaderProps> = ({ steps }) => {
   return (
-    <div className="w-full py-6 border-b border-gray-200">
+    <div className="w-full py-6 ">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-negro mb-6">
+        <span className="text-2xl sm:text-3xl font-bold text-negro mb-6 text-center block">
           Checkout
-        </h1>
+        </span>
 
         {/* Pasos del checkout */}
         <div className="flex items-center justify-between">
@@ -30,8 +30,8 @@ export const CheckoutHeader: React.FC<CheckoutHeaderProps> = ({ steps }) => {
                       step.current
                         ? "bg-negro text-white"
                         : step.completed
-                        ? "bg-gray-800 text-white"
-                        : "bg-gray-200 text-gray-500"
+                          ? "bg-gray-800 text-white"
+                          : "bg-gray-200 text-gray-500"
                     }`}
                   >
                     {step.completed ? (
@@ -58,8 +58,8 @@ export const CheckoutHeader: React.FC<CheckoutHeaderProps> = ({ steps }) => {
                       step.current
                         ? "text-negro"
                         : step.completed
-                        ? "text-gray-800"
-                        : "text-gray-500"
+                          ? "text-gray-800"
+                          : "text-gray-500"
                     }`}
                   >
                     {step.label}
@@ -82,4 +82,3 @@ export const CheckoutHeader: React.FC<CheckoutHeaderProps> = ({ steps }) => {
     </div>
   );
 };
-

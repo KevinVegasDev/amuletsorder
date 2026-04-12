@@ -11,17 +11,12 @@ interface ProductAttributesProps {
   getAvailableOptions: (attributeName: string) => string[];
   isOptionAvailable: (attributeName: string, optionValue: string) => boolean;
   onAttributeChange: (attributeName: string, value: string) => void;
-  /** No mostrar la etiqueta del atributo (ej. cuando el título va en el contenedor) */
   hideLabel?: boolean;
-  /** Clase para los botones de talla (no color) */
   sizeButtonClassName?: string;
-  /** Imagen por valor de color (ej. "Navy" -> url). Viene de la variación en WooCommerce; si existe se usa como swatch. */
   colorSwatchImages?: Record<string, string>;
+  missingAttributes?: string[];
 }
 
-/**
- * Component to display product attributes (Size, Color, etc.)
- */
 export const ProductAttributes: React.FC<ProductAttributesProps> = ({
   attributes,
   selectedAttributes,
@@ -31,6 +26,7 @@ export const ProductAttributes: React.FC<ProductAttributesProps> = ({
   hideLabel = false,
   sizeButtonClassName = "px-4 py-2 border-2 rounded transition-colors duration-200 font-medium",
   colorSwatchImages,
+  missingAttributes = [],
 }) => {
   void getAvailableOptions;
   const [imageFailedKeys, setImageFailedKeys] = useState<Set<string>>(new Set());
@@ -44,14 +40,17 @@ export const ProductAttributes: React.FC<ProductAttributesProps> = ({
         const isColor = isColorAttribute(attribute.name);
         const selectedValue = selectedAttributes[attribute.name];
         const sizeBtnClass = isColor ? "" : sizeButtonClassName;
+        const isMissing = missingAttributes.includes(attribute.name);
 
         return (
           <div
             key={`${attribute.name}-${attribute.id || index}`}
-            className="mb-0"
+            className={`mb-0 p-2 -m-2 rounded-lg transition-all duration-300 ${
+              isMissing ? "ring-2 ring-rosa ring-offset-2 animate-pulse" : ""
+            }`}
           >
             {!hideLabel && (
-              <label className="block text-negro font-medium mb-2">
+              <label className={`block font-medium mb-2 ${isMissing ? "text-rosa" : "text-negro"}`}>
                 {attribute.name}
               </label>
             )}

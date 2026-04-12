@@ -95,9 +95,9 @@ const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <HeartIcon color="var(--color-negro)" filled={true} />
-            <h2 className="text-xl sm:text-2xl font-bold text-negro">
+            <span className="text-xl sm:text-2xl font-bold text-negro">
               Saved Products
-            </h2>
+            </span>
             {wishlist.itemCount > 0 && (
               <span className="text-sm text-gray-500 font-medium">
                 ({wishlist.itemCount})
@@ -121,9 +121,9 @@ const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
               <div className="w-24 h-24 mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                 <HeartIcon color="var(--color-negro)" filled={false} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <span className="text-xl font-semibold text-gray-900 mb-2 block">
                 No saved products
-              </h3>
+              </span>
               <p className="text-gray-500 mb-6">
                 Save products you like by clicking the heart icon
               </p>
@@ -183,9 +183,9 @@ const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
                         onClick={onClose}
                         className="block"
                       >
-                        <h3 className="font-medium text-gray-900 mb-1 line-clamp-2 hover:text-rosa transition-colors duration-200">
+                        <span className="font-medium text-gray-900 mb-1 line-clamp-2 hover:text-rosa transition-colors duration-200 block">
                           {item.product.name}
-                        </h3>
+                        </span>
                         <p className="text-sm font-semibold text-negro mb-2">
                           {formatPrice(item.product.price)}
                         </p>

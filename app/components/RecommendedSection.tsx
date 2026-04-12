@@ -55,34 +55,34 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
     >
       {/* Div 1: Título y Controles */}
       <div className="flex flex-row justify-between items-center px-4 md:px-[50px] py-[64px]">
-        <h2 className="text-[24px] md:text-[32px] font-semibold text-black">
+        <span className="text-[24px] md:text-[32px] font-semibold text-black">
           Recommended for you
-        </h2>
+        </span>
         <div className="flex flex-row gap-2">
           <button
             onClick={scrollLeft}
-            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center rounded-full bg-black cursor-pointer hover:opacity-70 transition-opacity"
             aria-label="Scroll left"
           >
             <Image
               src="/left-arrow.svg"
               alt="Left arrow"
-              width={64}
-              height={64}
-              className="w-full h-full"
+              width={28}
+              height={28}
+              className="w-[20px] h-[20px] md:w-[42px] md:h-[72px]"
             />
           </button>
           <button
             onClick={scrollRight}
-            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center cursor-pointer hover:opacity-70 transition-opacity"
+            className="w-[44.8px] h-[44.8px] md:w-16 md:h-16 flex items-center justify-center rounded-full bg-black cursor-pointer hover:opacity-70 transition-opacity"
             aria-label="Scroll right"
           >
             <Image
               src="/right-arrow.svg"
               alt="Right arrow"
-              width={64}
-              height={64}
-              className="w-full h-full"
+              width={28}
+              height={28}
+              className="w-[20px] h-[20px] md:w-[42px] md:h-[72px]"
             />
           </button>
         </div>
@@ -140,12 +140,12 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
                     href={`/market/product/${product.slug}`}
                     prefetch={true}
                   >
-                    <h3
-                      className="text-[20px] font-medium text-black truncate"
+                    <span
+                      className="text-[20px] font-medium text-black truncate block"
                       title={product.name}
                     >
                       {product.name}
-                    </h3>
+                    </span>
                   </Link>
                   <p className="text-[16px] font-light">{category}</p>
                   <p className="text-base font-semibold text-black flex items-center gap-1">
@@ -165,10 +165,10 @@ const RecommendedSection: React.FC<RecommendedSectionProps> = ({
                 </div>
 
                 {/* Div 2: Icono wishlist */}
-                <div className="flex items-center justify-ceter">
+                <div className="flex items-center justify-center">
                   <button
                     onClick={handleWishlistClick}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-black py-[2px] cursor-pointer hover:opacity-70 transition-all"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-black cursor-pointer hover:opacity-70 transition-all"
                     aria-label={
                       isLiked ? "Remove from wishlist" : "Add to wishlist"
                     }

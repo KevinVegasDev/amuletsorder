@@ -839,3 +839,86 @@ export async function getCollections(): Promise<Collection[]> {
     return [];
   }
 }
+
+// Función para obtener el mensaje de la barra de anuncios
+export async function getAnnouncementMessage(): Promise<string> {
+  try {
+    const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace(
+      "/wc/v3",
+      "/wp/v2",
+    );
+    
+    // Buscar la entrada por slug "announcementmessage"
+    const response = await fetch(`${wpApiUrl}/posts?slug=announcementmessage`, {
+      next: { revalidate: 300 }, // Cache por 5 minutos
+    });
+
+    if (!response.ok) {
+      return "Free shipping on orders over $50";
+    }
+
+    const posts = await response.json();
+    
+    if (!posts || posts.length === 0) {
+      return "Free shipping on orders over $50";
+    }
+
+    // Extraer texto plano del contenido HTML
+    const contentHtml = posts[0].content?.rendered || "";
+    const text = contentHtml.replace(/<[^>]*>/g, "").trim();
+    
+    // Reemplaza entidades HTML como &nbsp; por espacios (opcional)
+    const cleanText = text.replace(/&nbsp;/g, " ");
+
+    return cleanText || "Free shipping on orders over $50";
+  } catch (error) {
+    console.error("Error fetching announcement message:", error);
+    return "Free shipping on orders over $50";
+  }
+}
+
+// Función para obtener una página de WordPress por slug
+export async function getWordPressPage(slug: string): Promise<{ title: string; contentHtml: string } | null> {
+  try {
+    const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace(
+      "/wc/v3",
+      "/wp/v2",
+    );
+    
+    // Buscar la página por slug
+    const response = await fetch(`${wpApiUrl}/pages?slug=${slug}`, {
+      next: { revalidate: 300 }, // Cache por 5 minutos
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const pages = await response.json();
+    
+    if (!pages || pages.length === 0) {
+      // Intentar buscar como post si no se encuentra como page (frecuente confusión)
+      const postResponse = await fetch(`${wpApiUrl}/posts?slug=${slug}`, {
+        next: { revalidate: 300 },
+      });
+      
+      if (!postResponse.ok) return null;
+      const posts = await postResponse.json();
+      
+      if (!posts || posts.length === 0) return null;
+      
+      return {
+        title: posts[0].title.rendered,
+        contentHtml: posts[0].content.rendered,
+      };
+    }
+
+    return {
+      title: pages[0].title.rendered,
+      contentHtml: pages[0].content.rendered,
+    };
+  } catch (error) {
+    console.error(`Error fetching WordPress page (${slug}):`, error);
+    return null;
+  }
+}

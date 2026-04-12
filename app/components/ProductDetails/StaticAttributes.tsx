@@ -8,6 +8,7 @@ interface StaticAttributesProps {
   showSize?: boolean;
   showColor?: boolean;
   sizeButtonClassName?: string;
+  missingAttributes?: string[];
 }
 
 /**
@@ -21,11 +22,17 @@ export const StaticAttributes: React.FC<StaticAttributesProps> = ({
   showSize = true,
   showColor = true,
   sizeButtonClassName = DEFAULT_SIZE_CLASS,
+  missingAttributes = [],
 }) => {
+  const isSizeMissing = missingAttributes.includes("Talla") || missingAttributes.includes("Size");
+  const isColorMissing = missingAttributes.includes("Color");
+
   return (
     <>
       {showSize && (
-        <div className="flex gap-2 flex-wrap">
+        <div className={`flex gap-2 flex-wrap p-2 -m-2 rounded-lg transition-all duration-300 ${
+          isSizeMissing ? "ring-2 ring-rosa ring-offset-2 animate-pulse" : ""
+        }`}>
           {["S", "M", "X", "XL", "XLL"].map((size) => (
             <button
               key={size}
@@ -43,7 +50,9 @@ export const StaticAttributes: React.FC<StaticAttributesProps> = ({
       )}
 
       {showColor && (
-        <div className="flex gap-4 flex-wrap">
+        <div className={`flex gap-4 flex-wrap p-2 -m-2 rounded-lg transition-all duration-300 ${
+          isColorMissing ? "ring-2 ring-rosa ring-offset-2 animate-pulse" : ""
+        }`}>
           {[
             { name: "Black", value: "black", hex: "#000000" },
             { name: "Red", value: "red", hex: "#8B0000" },
