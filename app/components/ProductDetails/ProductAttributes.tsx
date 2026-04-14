@@ -76,9 +76,9 @@ export const ProductAttributes: React.FC<ProductAttributesProps> = ({
                       }}
                       disabled={!isAvailable}
                       className={`relative w-10 h-10 rounded-full border-2 transition-all duration-200 overflow-hidden ${isSelected
-                        ? "border-negro scale-110"
+                        ? "border-negro scale-110 cursor-pointer"
                         : isAvailable
-                          ? "border-gray-300 hover:border-gray-400"
+                          ? "border-gray-300 hover:border-gray-400 cursor-pointer"
                           : "border-gray-200 opacity-40 cursor-not-allowed"
                         }`}
                       style={
@@ -142,9 +142,9 @@ export const ProductAttributes: React.FC<ProductAttributesProps> = ({
                       }}
                       disabled={!isAvailable}
                       className={`${sizeBtnClass} transition-colors duration-200 font-medium ${isSelected
-                        ? "bg-negro text-white border-negro"
+                        ? "bg-negro text-white border-negro cursor-pointer"
                         : isAvailable
-                          ? "bg-white text-negro border-gray-300 hover:border-negro"
+                          ? "bg-white text-negro border-gray-300 hover:border-negro cursor-pointer"
                           : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50"
                         }`}
                       title={!isAvailable ? "Not available" : option}

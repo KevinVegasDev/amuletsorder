@@ -28,9 +28,17 @@ const useIsMobile = () => {
   return isMobile;
 };
 
-export default function SearchBar({ onToggleFilters, onSearch, searchValue, filtersVisible = true, onOpenMobileFilters }: SearchBarProps) {
+export default function SearchBar({
+  onToggleFilters,
+  onSearch,
+  searchValue,
+  filtersVisible = true,
+  onOpenMobileFilters,
+}: SearchBarProps) {
   const [internalQuery, setInternalQuery] = useState(searchValue ?? "");
-  const [suggestions, setSuggestions] = useState<Array<{ id: number, name: string, slug: string, image: string }>>([]);
+  const [suggestions, setSuggestions] = useState<
+    Array<{ id: number; name: string; slug: string; image: string }>
+  >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const isMobile = useIsMobile();
@@ -62,7 +70,9 @@ export default function SearchBar({ onToggleFilters, onSearch, searchValue, filt
       return;
     }
     try {
-      const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
+      const res = await fetch(
+        `/api/search/suggestions?q=${encodeURIComponent(query)}`,
+      );
       if (res.ok) {
         const data = await res.json();
         setSuggestions(data.suggestions || []);
@@ -76,14 +86,14 @@ export default function SearchBar({ onToggleFilters, onSearch, searchValue, filt
   useEffect(() => {
     const urlValue = searchValue ?? "";
     if (internalQuery === urlValue) return;
-    
+
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       fetchSuggestions(internalQuery);
       // Removed automatic onSearch emit on typing to prevent full page reload on every key stroke
       debounceRef.current = null;
     }, SEARCH_DEBOUNCE_MS);
-    
+
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -118,19 +128,29 @@ export default function SearchBar({ onToggleFilters, onSearch, searchValue, filt
   };
 
   return (
-    <div className="flex flex-row gap-4 max-w-[601px] py-1.5" ref={searchContainerRef}>
+    <div
+      className="flex flex-row gap-4 max-w-[601px] p-[32px]"
+      ref={searchContainerRef}
+    >
       {/* Móvil: "Filters" abre el sidebar. Desktop: "Hide filters" / "Show filters" */}
       <button
         type="button"
         onClick={isMobile ? onOpenMobileFilters : onToggleFilters}
         className="px-8 font-semibold text-base text-negro transition-colors whitespace-nowrap hover:opacity-80"
       >
-        {isMobile ? "Filters" : (filtersVisible ? "Hide filters" : "Show filters")}
+        {isMobile
+          ? "Filters"
+          : filtersVisible
+            ? "Hide filters"
+            : "Show filters"}
       </button>
 
       {/* Contenedor del Search Input */}
       <div className="flex-1 relative">
-        <form onSubmit={handleSubmit} className="flex items-center justify-between bg-white rounded-[12px] px-3 h-full min-h-[44px]">
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-center justify-between bg-white rounded-[12px] px-3 h-full min-h-[44px]"
+        >
           <input
             type="text"
             placeholder="What are you looking for?"
@@ -142,13 +162,12 @@ export default function SearchBar({ onToggleFilters, onSearch, searchValue, filt
             }}
             className="flex-1 w-full text-[14px]/10 placeholder:text-[#212121/25] text-[#212121] focus:outline-none bg-transparent"
           />
-          <button type="submit" className="ml-3 p-0 border-0 bg-transparent cursor-pointer" aria-label="Search">
-            <Image
-              src="/icons/lupa.svg"
-              alt=""
-              width={16}
-              height={16}
-            />
+          <button
+            type="submit"
+            className="ml-3 p-0 border-0 bg-transparent cursor-pointer"
+            aria-label="Search"
+          >
+            <Image src="/icons/lupa.svg" alt="" width={16} height={16} />
           </button>
         </form>
 
@@ -157,7 +176,10 @@ export default function SearchBar({ onToggleFilters, onSearch, searchValue, filt
           <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-[100]">
             <ul className="flex flex-col">
               {suggestions.map((item) => (
-                <li key={item.id} className="border-b last:border-b-0 border-gray-50">
+                <li
+                  key={item.id}
+                  className="border-b last:border-b-0 border-gray-50"
+                >
                   <button
                     type="button"
                     onClick={() => handleSuggestionClick(item.slug)}
@@ -171,7 +193,9 @@ export default function SearchBar({ onToggleFilters, onSearch, searchValue, filt
                         className="object-cover"
                       />
                     </div>
-                    <span className="text-sm font-medium text-negro truncate">{item.name}</span>
+                    <span className="text-sm font-medium text-negro truncate">
+                      {item.name}
+                    </span>
                   </button>
                 </li>
               ))}

@@ -23,10 +23,12 @@ export default function MarketView() {
       } else {
         params.delete("search");
       }
-      const newURL = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+      const newURL = params.toString()
+        ? `${pathname}?${params.toString()}`
+        : pathname;
       router.replace(newURL, { scroll: false });
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   );
 
   return (
@@ -38,7 +40,7 @@ export default function MarketView() {
         searchValue={searchValue}
         onSearch={handleSearch}
       />
-      <div className="py-8">
+      <div className="">
         <CatalogLayout
           showFilters={filtersVisible}
           isMobileFiltersOpen={mobileFiltersOpen}

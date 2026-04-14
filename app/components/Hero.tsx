@@ -45,23 +45,25 @@ const Hero: React.FC<HeroProps> = ({
 
       <div className="absolute inset-0 flex items-end justify-start">
         <div className="w-full max-w-[1920px] mx-auto">
-        <div className="px-8 flex flex-col gap-4 py-16">
-          <h1 className="text-[24px] sm:text-5xl font-extrabold sm:font-bold text-gris leading-tight max-w-2xl">
-            {title}
-          </h1>
+          <div className="px-8 flex flex-col gap-4 py-16">
+            <h1 className="text-[24px] sm:text-5xl font-extrabold sm:font-bold text-gris leading-tight max-w-2xl">
+              {title}
+            </h1>
 
-          <p className="text-[16px] sm:text-[32px] text-gris">{description}</p>
+            <p className="text-[16px] sm:text-[32px] text-gris">
+              {description}
+            </p>
 
-          <div className="">
-            <Link
-              href={ctaLink}
-              prefetch={true}
-              className="inline-block px-8  py-4 rounded-[12px] bg-blanco  transition-colors duration-200 md:text-[20px] text-[16px]/[19px]"
-              aria-label={ctaText}
-            >
-              {ctaText}
-            </Link>
-          </div>
+            <div className="">
+              <Link
+                href={ctaLink}
+                prefetch={true}
+                className="inline-block px-8  py-4 rounded-[12px] bg-blanco  transition-colors duration-200 md:text-[20px] text-[16px]/[19px]"
+                aria-label={ctaText}
+              >
+                {ctaText}
+              </Link>
+            </div>
           </div>
         </div>
       </div>
