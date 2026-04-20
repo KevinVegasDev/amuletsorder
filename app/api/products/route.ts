@@ -20,7 +20,6 @@ const API_CONFIG: WordPressAPIConfig = {
   version: "v3",
 };
 
-// Función para crear headers de autenticación
 function createAuthHeaders(): HeadersInit {
   const auth = Buffer.from(
     `${API_CONFIG.consumerKey}:${API_CONFIG.consumerSecret}`
@@ -45,7 +44,6 @@ function transformWordPressProduct(wpProduct: WordPressProduct): Product {
       highQualitySrc.includes("-150x150") ||
       highQualitySrc.includes("-300x300")
     ) {
-      console.log("Applying URL replacement fallback");
       highQualitySrc = highQualitySrc.replace(/-\d+x\d+/, "");
     }
 
@@ -105,10 +103,6 @@ export async function GET(request: NextRequest) {
   try {
     // Verificar si las credenciales están configuradas
     if (!API_CONFIG.consumerKey || !API_CONFIG.consumerSecret) {
-      console.log(
-        "WordPress API credentials not configured, returning mock data"
-      );
-      // Retornar datos mock cuando no hay configuración
       const result: ProductsResponse = {
         products: [],
         total: 0,
@@ -165,22 +159,16 @@ export async function GET(request: NextRequest) {
           
           if (categoryIds.length > 0) {
             params.append("category", categoryIds.join(","));
-            console.log("🔄 Converted category slugs to IDs:", { slugs: categorySlugs, ids: categoryIds });
           } else {
-            console.warn("⚠️ No matching category IDs found for slugs:", categorySlugs);
+            console.error("No matching category IDs found for slugs:", categorySlugs);
           }
         }
       } catch (error) {
-        console.error("❌ Error converting category slugs to IDs:", error);
-        // Si falla la conversión, intentar usar el parámetro tal cual (por si acaso son IDs)
+        console.error("Error converting category slugs to IDs:", error);
         params.append("category", categoriesParam);
       }
     }
-    if (tags) {
-      console.log("Server API: Tags parameter received:", tags);
-      // Intentar primero con 'tags' (plural) y luego con 'tag' (singular) si no funciona
-      params.append("tags", tags);
-    }
+    if (tags) params.append("tags", tags);
     if (featured === "true") params.append("featured", "true");
     if (onSale === "true") params.append("on_sale", "true");
     if (search) params.append("search", search);
@@ -201,28 +189,10 @@ export async function GET(request: NextRequest) {
     if (minPrice) params.append("min_price", minPrice);
     if (maxPrice) params.append("max_price", maxPrice);
 
-    console.log(
-      "Server API: Fetching URL:",
-      `${API_CONFIG.baseUrl}/products?${params}`
-    );
-    console.log("Server API: Auth configured:", {
-      hasConsumerKey: !!API_CONFIG.consumerKey,
-      hasConsumerSecret: !!API_CONFIG.consumerSecret,
-    });
-    console.log("Server API: Filters applied:", {
-      categories: categoriesParam,
-      tags,
-      featured,
-      onSale,
-      search,
-      priceRange: minPrice && maxPrice ? `${minPrice}-${maxPrice}` : null,
-    });
-
     let response: Response;
     try {
-      // Agregar timeout para evitar que se quede colgado
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       response = await fetch(`${API_CONFIG.baseUrl}/products?${params}`, {
         headers: createAuthHeaders(),
@@ -235,17 +205,13 @@ export async function GET(request: NextRequest) {
       console.error("Server API Fetch Error:", fetchError);
       if (fetchError instanceof Error && fetchError.name === "AbortError") {
         return NextResponse.json(
-          {
-            error: "La solicitud a WordPress tardó demasiado. Por favor, intenta nuevamente.",
-          },
-          { status: 504 } // Gateway Timeout
+          { error: "La solicitud a WordPress tardó demasiado. Por favor, intenta nuevamente." },
+          { status: 504 }
         );
       }
       return NextResponse.json(
-        {
-          error: `Error de conexión con WordPress: ${fetchError instanceof Error ? fetchError.message : "Error desconocido"}`,
-        },
-        { status: 502 } // Bad Gateway
+        { error: `Error de conexión con WordPress: ${fetchError instanceof Error ? fetchError.message : "Error desconocido"}` },
+        { status: 502 }
       );
     }
 
@@ -254,12 +220,10 @@ export async function GET(request: NextRequest) {
       let errorText = "";
       try {
         errorText = await response.text();
-        console.error("Server API Error Body:", errorText);
       } catch {
         console.error("Could not read error response body");
       }
 
-      // Mensajes más específicos para errores comunes
       let errorMessage = `Error fetching products: ${response.status} ${response.statusText}`;
       if (response.status === 503) {
         errorMessage = "WordPress está temporalmente no disponible. Por favor, intenta nuevamente en unos momentos.";
@@ -272,49 +236,23 @@ export async function GET(request: NextRequest) {
       }
 
       return NextResponse.json(
-        {
-          error: errorMessage,
-          details: errorText || undefined,
-        },
+        { error: errorMessage, details: errorText || undefined },
         { status: response.status }
       );
     }
 
     let wpProducts: WordPressProduct[] = await response.json();
-    console.log(
-      "Server API: WordPress response - products count:",
-      wpProducts.length
-    );
-    if (tags) {
-      console.log(
-        "Server API: Products with tags:",
-        wpProducts.map((p) => ({ id: p.id, name: p.name, tags: p.tags }))
-      );
 
-      // Filtrar productos que realmente tengan la etiqueta solicitada
-      const requestedTags = tags
-        .split(",")
-        .map((tag) => tag.trim().toLowerCase());
+    if (tags) {
+      const requestedTags = tags.split(",").map((tag) => tag.trim().toLowerCase());
       wpProducts = wpProducts.filter((product) => {
-        if (!product.tags || product.tags.length === 0) {
-          return false;
-        }
+        if (!product.tags || product.tags.length === 0) return false;
         return product.tags.some(
           (tag) =>
             requestedTags.includes(tag.slug.toLowerCase()) ||
             requestedTags.includes(tag.name.toLowerCase())
         );
       });
-
-      console.log("Server API: Filtered products count:", wpProducts.length);
-      console.log(
-        "Server API: Filtered products:",
-        wpProducts.map((p) => ({
-          id: p.id,
-          name: p.name,
-          tags: p.tags.map((t) => t.slug),
-        }))
-      );
     }
 
     const totalHeader = response.headers.get("X-WP-Total");

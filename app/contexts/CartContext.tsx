@@ -84,7 +84,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   /**
    * Agregar producto al carrito
    */
-  const addToCart = useCallback((product: Product, quantity: number = 1) => {
+  const addToCart = useCallback((product: Product, quantity: number = 1, selectedAttributes?: Record<string, string>) => {
     // Validar que el producto tenga stock
     if (!product.inStock) {
       console.warn("Producto sin stock:", product.name);
@@ -92,7 +92,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
 
     setItems((prevItems) => {
-      // Verificar si el producto ya está en el carrito
+      // Verificar si el producto ya está en el carrito (mismo id = misma variación)
       const existingItemIndex = prevItems.findIndex(
         (item) => item.product.id === product.id
       );
@@ -112,6 +112,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           {
             product,
             quantity,
+            selectedAttributes,
             addedAt: new Date(),
           },
         ];

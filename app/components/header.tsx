@@ -9,6 +9,7 @@ import { useWishlist } from "../contexts/WishlistContext";
 import CartSidebar from "./CartSidebar";
 import WishlistDropdown from "./WishlistDropdown";
 import MoreDropdownPanel from "./MoreDropdownPanel";
+import MarketDropdownPanel from "./MarketDropdownPanel";
 
 interface HeaderProps {
   announcementMessage?: string;
@@ -22,9 +23,23 @@ const Header: React.FC<HeaderProps> = ({
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<'market' | 'more' | null>(null);
   const [alignLeft, setAlignLeft] = useState(0);
   const navRef = useRef<HTMLDivElement>(null);
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = useCallback((menu: 'market' | 'more') => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+    }
+    setActiveDropdown(menu);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 150);
+  }, []);
 
   const cartItemCount = getCartItemCount();
   const wishlistItemCount = getWishlistItemCount();
@@ -79,17 +94,23 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   home
                 </Link>
-                <Link
-                  href="/market"
-                  prefetch={true}
-                  className="px-4 py-2 text-black"
-                >
-                  Market
-                </Link>
                 <div
                   className="relative"
-                  onMouseEnter={() => setIsMoreOpen(true)}
-                  onMouseLeave={() => setIsMoreOpen(false)}
+                  onMouseEnter={() => handleMouseEnter('market')}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <Link
+                    href="/market"
+                    prefetch={true}
+                    className="block px-4 py-2 text-black"
+                  >
+                    Market
+                  </Link>
+                </div>
+                <div
+                  className="relative"
+                  onMouseEnter={() => handleMouseEnter('more')}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <span className="px-4 py-2 text-black uppercase cursor-pointer">
                     More
@@ -219,12 +240,39 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </header>
 
-        <MoreDropdownPanel
-          isOpen={isMoreOpen}
-          alignLeft={alignLeft}
-          onMouseEnter={() => setIsMoreOpen(true)}
-          onMouseLeave={() => setIsMoreOpen(false)}
-        />
+        {/* Unified Dropdown Container */}
+        <div
+          className={`hidden sm:block absolute left-0 w-full border-t border-[#212121]/10 overflow-hidden transition-all duration-300 z-40 ${
+            activeDropdown ? "max-h-[300px] py-6 opacity-100" : "max-h-0 py-0 opacity-0 pointer-events-none"
+          }`}
+          style={{
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(3.4px)",
+            WebkitBackdropFilter: "blur(3.4px)",
+            boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+          }}
+          onMouseEnter={() => {
+            if (dropdownTimeoutRef.current) clearTimeout(dropdownTimeoutRef.current);
+          }}
+          onMouseLeave={handleMouseLeave}
+        >
+          <div className="grid grid-cols-1 grid-rows-1 w-full h-full">
+            <div 
+              className={`col-start-1 row-start-1 transition-opacity duration-300 ${
+                activeDropdown === 'market' ? 'opacity-100 pointer-events-auto z-10' : 'opacity-0 pointer-events-none z-0'
+              }`}
+            >
+              <MarketDropdownPanel alignLeft={alignLeft} />
+            </div>
+            <div 
+              className={`col-start-1 row-start-1 transition-opacity duration-300 ${
+                activeDropdown === 'more' ? 'opacity-100 pointer-events-auto z-10' : 'opacity-0 pointer-events-none z-0'
+              }`}
+            >
+              <MoreDropdownPanel alignLeft={alignLeft} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ===== MOBILE MENU BACKDROP ===== */}

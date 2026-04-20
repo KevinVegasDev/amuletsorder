@@ -1,4 +1,3 @@
-import HomeProductsSection from "./components/HomeProductsSection";
 import ResumeHome from "./components/ResumeHome";
 import { getBannersData } from "./lib/banner-helpers";
 import { loadProductsData } from "./lib/product-helpers";
@@ -8,7 +7,6 @@ import { getCollectionsData } from "./lib/collection-helpers";
 import RecommendedSection from "./components/RecommendedSection";
 import Trending from "./components/Trending";
 import FeaturesSection from "./components/FeaturesSection";
-import CountdownTimer from "./components/CountdownTimer";
 
 // Evitar prerender en build: fetches a /api usan localhost (no existe durante build)
 export const dynamic = "force-dynamic";
@@ -28,10 +26,6 @@ const featuresData = [
     description: "Returns available within 15 days",
   },
 ];
-
-// Fecha objetivo para la próxima colección (configura esto según tu necesidad)
-// Formato: YYYY-MM-DDTHH:mm:ss
-const NEXT_COLLECTION_DATE = "2024-12-31T23:59:59"; // Ejemplo: Fin de año
 
 export default async function Home() {
   // Obtener y transformar los banners desde WordPress
@@ -65,10 +59,7 @@ export default async function Home() {
       {/* Countdown Timer para próxima colección */}
 
       {/* Sección de Categorías HOME */}
-      <HomeProductsSection
-        categories={productsData.homeCategories}
-        categoryImages={productsData.categoryImages}
-      />
+
       <CollectionSection collections={collections} />
 
       {/* Sección de Productos Recomendados (desde loadProductsData, fetch directo WooCommerce) */}

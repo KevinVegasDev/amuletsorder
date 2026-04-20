@@ -37,12 +37,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   filtersVisible = true,
 }) => {
   const isMobile = useIsMobile();
-  const cardWidthPx = filtersVisible ? CARD_WIDTH_WITH_FILTERS : CARD_WIDTH_WITHOUT_FILTERS;
-  const gridCols = isMobile ? "repeat(2, 1fr)" : `repeat(4, ${cardWidthPx}px)`;
+  // Usamos minmax con auto-fill para que se adapte mágicamente y haga "wrap" del último producto
+  // en pantallas pequeñas de escritorio, envés de desbordarse usando píxeles quemados.
+  const gridCols = isMobile ? "repeat(2, 1fr)" : `repeat(auto-fill, minmax(300px, 1fr))`;
 
   return (
     <div
-      className={`grid gap-[14px] transition-[grid-template-columns] duration-300 ease-in-out ${className}`}
+      className={`grid gap-[14px] transition-all duration-300 ease-in-out ${className}`}
       style={{ gridTemplateColumns: gridCols }}
     >
       {products.map((product) => (

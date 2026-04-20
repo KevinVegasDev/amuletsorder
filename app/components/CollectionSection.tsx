@@ -22,7 +22,9 @@ const CollectionSection: React.FC<CollectionSectionProps> = ({
   }
 
   return (
-    <section className={`flex flex-col md:flex-row gap-[8px] ${className}`}>
+    <section
+      className={`flex flex-col mt-[8px] md:flex-row gap-[8px] ${className}`}
+    >
       {displayCollections.map((collection) => (
         <div
           key={collection.id}

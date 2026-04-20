@@ -84,6 +84,7 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
 
               {/* Información del producto y controles */}
               <div className="flex-1 min-w-0">
+                {/* Nombre + eliminar */}
                 <div className="flex items-start justify-between gap-2">
                   <Link
                     href={`/market/product/${item.product.slug}`}
@@ -102,6 +103,22 @@ export const CheckoutSummary: React.FC<CheckoutSummaryProps> = ({
                     <TrashIcon className="w-4 h-4" />
                   </button>
                 </div>
+
+                {/* Atributos seleccionados (talla, color) */}
+                {item.selectedAttributes && Object.keys(item.selectedAttributes).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {Object.entries(item.selectedAttributes).map(([key, value]) => (
+                      <span
+                        key={key}
+                        className="text-xs font-medium bg-gray-100 text-gray-600 rounded px-2 py-0.5"
+                      >
+                        {key}: {value}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Cantidad + precio */}
                 <div className="flex items-center justify-between gap-2 mt-1">
                   <div className="flex items-center border border-gray-200 rounded">
                     <button

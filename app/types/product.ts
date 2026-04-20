@@ -275,52 +275,16 @@ export interface ProductTag {
 
 export interface ProductFilters {
   categories?: string[];
-  priceRange?: {
-    min: number;
-    max: number;
-  };
-  featured?: boolean;
-  onSale?: boolean;
-  minRating?: number;
-  search?: string;
-}
-
-export interface ProductCategory {
-  id: string | number;
-  name: string;
-  slug: string;
-  description?: string;
-  count?: number;
-}
-
-export interface WordPressCategory {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  parent?: number;
-  count?: number;
-}
-
-export interface ProductTag {
-  id: number;
-  name: string;
-  slug: string;
-}
-
-// Tipos para filtros y búsqueda
-export interface ProductFilters {
-  categories?: string[];
   tags?: string[];
   priceRange?: {
     min: number;
     max: number;
   };
   inStock?: boolean;
-  onSale?: boolean;
   featured?: boolean;
-  search?: string;
+  onSale?: boolean;
   minRating?: number;
+  search?: string;
   sortBy?: "name" | "price" | "date" | "popularity" | "rating";
   sortOrder?: "asc" | "desc";
 }

@@ -131,7 +131,7 @@ export const useProductActions = ({
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     const productToAdd = createProductToAdd();
-    addToCart(productToAdd, 1);
+    addToCart(productToAdd, 1, selectedAttributes);
     showToast(`${product.name} added to cart`, "success", 2000);
 
     setIsAddingToCart(false);
@@ -156,7 +156,7 @@ export const useProductActions = ({
     await new Promise((resolve) => setTimeout(resolve, 300));
 
     const productToAdd = createProductToAdd();
-    addToCart(productToAdd, 1);
+    addToCart(productToAdd, 1, selectedAttributes);
     showToast(`${product.name} added to cart`, "success", 2000);
 
     setTimeout(() => {

@@ -231,7 +231,6 @@ export async function getProducts(
     }
 
     const url = `${baseUrl}?${params}`;
-    console.log(`[getProducts] Fetching from: ${url}`);
 
     let response: Response;
     try {
@@ -296,17 +295,9 @@ export async function getProducts(
         }
       } catch (parseError) {
         // Si falla el parseo, usar el mensaje basado en el código de estado
-        console.warn(
-          "[getProducts] Could not parse error response:",
-          parseError,
-        );
-      }
+        }
 
-      console.error(`[getProducts] Error response:`, {
-        status: response.status,
-        statusText: response.statusText,
-        message: errorMessage,
-      });
+      console.error(`[getProducts] Error response: ${response.status} ${errorMessage}`);
 
       // Crear error con información del código de estado
       const error = new Error(errorMessage) as Error & { statusCode?: number };
@@ -683,24 +674,14 @@ export async function searchProducts(
 // Función para obtener los banners desde WordPress
 export async function getBanners(): Promise<Banner[]> {
   try {
-    // Construir la URL base para la API REST de WordPress
     const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace(
       "/wc/v3",
       "/wp/v2",
     );
-    console.log("🔗 URL base de WordPress API:", wpApiUrl);
 
-    console.log("🎯 Intentando obtener el ID de la categoría Banner...");
     const categoriesResponse = await fetch(
       `${wpApiUrl}/categories?slug=Banner`,
-      {
-        next: { revalidate: 300 }, // Cache por 5 minutos
-      },
-    );
-
-    console.log(
-      "📊 Estado de la respuesta de categorías:",
-      categoriesResponse.status,
+      { next: { revalidate: 300 } },
     );
 
     if (!categoriesResponse.ok) {
@@ -710,25 +691,13 @@ export async function getBanners(): Promise<Banner[]> {
     }
 
     const categories = await categoriesResponse.json();
-    console.log("📦 Categorías encontradas:", categories);
-
-    if (!categories.length) {
-      console.error("❌ No se encontró la categoría banner");
-      return [];
-    }
+    if (!categories.length) return [];
 
     const categoryId = categories[0].id;
-    console.log("🎯 ID de la categoría banner:", categoryId);
-
-    console.log("🎯 Intentando obtener posts de la categoría...");
     const postsResponse = await fetch(
       `${wpApiUrl}/posts?categories=${categoryId}&_embed`,
-      {
-        next: { revalidate: 300 }, // Cache por 5 minutos
-      },
+      { next: { revalidate: 300 } },
     );
-
-    console.log("📊 Estado de la respuesta de posts:", postsResponse.status);
 
     if (!postsResponse.ok) {
       throw new Error(
@@ -737,10 +706,7 @@ export async function getBanners(): Promise<Banner[]> {
     }
 
     const posts: WordPressBanner[] = await postsResponse.json();
-    console.log("📦 Posts de banner obtenidos:", posts);
-
-    // Transformar los posts a un formato más simple para los banners
-    const banners = posts.map(
+    return posts.map(
       (post: WordPressBanner): Banner => ({
         id: post.id,
         title: post.title.rendered,
@@ -751,11 +717,8 @@ export async function getBanners(): Promise<Banner[]> {
           post.title.rendered,
       }),
     );
-
-    console.log("✅ Banners transformados:", banners);
-    return banners;
   } catch (error) {
-    console.error("❌ Error al obtener banners:", error);
+    console.error("Error fetching banners:", error);
     return [];
   }
 }
@@ -763,24 +726,14 @@ export async function getBanners(): Promise<Banner[]> {
 // Función para obtener colecciones (entradas con categoría "coleccion")
 export async function getCollections(): Promise<Collection[]> {
   try {
-    // Construir la URL base para la API REST de WordPress
     const wpApiUrl = process.env.NEXT_PUBLIC_WORDPRESS_API_URL?.replace(
       "/wc/v3",
       "/wp/v2",
     );
-    console.log("🔗 URL base de WordPress API para colecciones:", wpApiUrl);
 
-    console.log("🎯 Intentando obtener el ID de la categoría coleccion...");
     const categoriesResponse = await fetch(
       `${wpApiUrl}/categories?slug=coleccion`,
-      {
-        next: { revalidate: 300 }, // Cache por 5 minutos
-      },
-    );
-
-    console.log(
-      "📊 Estado de la respuesta de categorías:",
-      categoriesResponse.status,
+      { next: { revalidate: 300 } },
     );
 
     if (!categoriesResponse.ok) {
@@ -790,25 +743,13 @@ export async function getCollections(): Promise<Collection[]> {
     }
 
     const categories = await categoriesResponse.json();
-    console.log("📦 Categorías encontradas:", categories);
-
-    if (!categories.length) {
-      console.error("❌ No se encontró la categoría coleccion");
-      return [];
-    }
+    if (!categories.length) return [];
 
     const categoryId = categories[0].id;
-    console.log("🎯 ID de la categoría coleccion:", categoryId);
-
-    console.log("🎯 Intentando obtener posts de la categoría coleccion...");
     const postsResponse = await fetch(
       `${wpApiUrl}/posts?categories=${categoryId}&_embed&per_page=2`,
-      {
-        next: { revalidate: 300 }, // Cache por 5 minutos
-      },
+      { next: { revalidate: 300 } },
     );
-
-    console.log("📊 Estado de la respuesta de posts:", postsResponse.status);
 
     if (!postsResponse.ok) {
       throw new Error(
@@ -817,25 +758,19 @@ export async function getCollections(): Promise<Collection[]> {
     }
 
     const posts: WordPressCollection[] = await postsResponse.json();
-    console.log("📦 Posts de coleccion obtenidos:", posts);
-
-    // Transformar los posts a un formato más simple para las colecciones
-    const collections = posts.map(
+    return posts.map(
       (post: WordPressCollection): Collection => ({
         id: post.id,
         title: post.title.rendered,
-        description: post.excerpt.rendered.replace(/<[^>]*>/g, ""), // Remover HTML del excerpt
+        description: post.excerpt.rendered.replace(/<[^>]*>/g, ""),
         imageUrl: post._embedded?.["wp:featuredmedia"]?.[0]?.source_url || "",
         imageAlt:
           post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ||
           post.title.rendered,
       }),
     );
-
-    console.log("✅ Colecciones transformadas:", collections);
-    return collections;
   } catch (error) {
-    console.error("❌ Error al obtener colecciones:", error);
+    console.error("Error fetching collections:", error);
     return [];
   }
 }

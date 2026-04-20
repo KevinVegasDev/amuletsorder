@@ -173,6 +173,20 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
                         {formatPrice(item.product.price)}
                       </p>
 
+                      {/* Atributos seleccionados (talla, color) */}
+                      {item.selectedAttributes && Object.keys(item.selectedAttributes).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {Object.entries(item.selectedAttributes).map(([key, value]) => (
+                            <span
+                              key={key}
+                              className="text-xs font-medium bg-gray-100 text-gray-700 rounded px-2 py-0.5"
+                            >
+                              {key}: {value}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       {/* Controles de cantidad */}
                       <div className="flex items-center gap-3">
                         <div className="flex items-center border border-gray-300 rounded">

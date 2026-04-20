@@ -6,7 +6,8 @@ import { Product } from "./product";
 export interface CartItem {
   product: Product;
   quantity: number;
-  // Fecha de agregado (opcional, útil para ordenar)
+  /** Atributos seleccionados al agregar (ej: { Talla: 'M', Color: 'Black' }) */
+  selectedAttributes?: Record<string, string>;
   addedAt?: Date;
 }
 
@@ -41,7 +42,7 @@ export interface Wishlist {
  */
 export interface CartContextType {
   cart: Cart;
-  addToCart: (product: Product, quantity?: number) => void;
+  addToCart: (product: Product, quantity?: number, selectedAttributes?: Record<string, string>) => void;
   removeFromCart: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
